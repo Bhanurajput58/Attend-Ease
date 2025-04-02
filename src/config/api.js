@@ -1,4 +1,30 @@
+import axios from 'axios';
+
 const API_BASE_URL = 'http://localhost:5000/api';
+
+// Development mode flag - set to true to use mock data instead of API calls
+export const IS_DEVELOPMENT_MODE = false;
+
+// Set up axios interceptor to handle mock data mode
+if (IS_DEVELOPMENT_MODE) {
+  axios.interceptors.request.use(
+    config => {
+      // Check if the request is to our API
+      if (config.url && config.url.includes(API_BASE_URL)) {
+        // Log the API call that would have been made
+        console.log(`Mock API: ${config.method?.toUpperCase()} ${config.url}`);
+        
+        // Cancel the actual API request and handle it in mock data mode
+        return {
+          ...config,
+          cancelToken: new axios.CancelToken(cancel => cancel('Using mock data mode'))
+        };
+      }
+      return config;
+    },
+    error => Promise.reject(error)
+  );
+}
 
 export const API_ENDPOINTS = {
     // Auth endpoints
@@ -26,6 +52,7 @@ export const API_ENDPOINTS = {
     CREATE_ATTENDANCE: `${API_BASE_URL}/attendance`,
     UPDATE_ATTENDANCE: (id) => `${API_BASE_URL}/attendance/${id}`,
     DELETE_ATTENDANCE: (id) => `${API_BASE_URL}/attendance/${id}`,
+    EXPORT_ATTENDANCE: `${API_BASE_URL}/attendance/export`,
     
     // Student endpoints
     GET_STUDENT_DASHBOARD: `${API_BASE_URL}/student/dashboard`,

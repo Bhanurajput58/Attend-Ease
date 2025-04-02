@@ -1,30 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useHasRole } from '../../components/RoleBasedAccess';
 import { BarChart } from '../../components/charts';
 import '../../styles/DashboardPage.css';
 
-const AttendanceListPage = () => {
+const AttendanceListPage = ({ filter: filterProp }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const location = useLocation();
+  const { courseId } = useParams(); // Get courseId from URL params if in course filter mode
   const [loading, setLoading] = useState(true);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [studentAttendance, setStudentAttendance] = useState(null);
-  const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState('all'); // Add local filter state
   
   // Check if user is faculty or admin
   const isFacultyOrAdmin = useHasRole(['faculty', 'admin']);
   const isStudent = useHasRole(['student']);
   
+  // Add a state to track if we're in course filter mode
+  const isCourseFilterMode = filterProp === 'course' && courseId;
+  
   useEffect(() => {
-    // Fetch data based on user role
-    if (isFacultyOrAdmin) {
-      fetchFacultyAttendanceData();
-    } else if (isStudent) {
-      fetchStudentAttendanceData();
+    // If we have filterProp and courseId, set the local filter
+    if (isCourseFilterMode && courseId) {
+      setFilter(courseId);
     }
-  }, [isFacultyOrAdmin, isStudent, user]);
+  }, [filterProp, courseId, isCourseFilterMode]);
+  
+  useEffect(() => {
+    // If in course filter mode, only fetch attendance for the specific course
+    if (isCourseFilterMode) {
+      fetchCourseAttendance(courseId);
+    } else {
+      fetchAllAttendance();
+    }
+  }, [courseId, isCourseFilterMode]);
   
   // Mock data for faculty view
   const fetchFacultyAttendanceData = () => {
@@ -167,6 +180,14 @@ const AttendanceListPage = () => {
     setSearchQuery(e.target.value);
   };
   
+  // Helper function to get course name by ID
+  const getCourseNameById = (courseId) => {
+    if (courseId === 'CS101') return 'Computer Science 101';
+    if (courseId === 'DB202') return 'Database Systems';
+    if (courseId === 'SE303') return 'Software Engineering';
+    return courseId; // Fallback to ID if name not found
+  };
+  
   const getFilteredRecords = () => {
     if (!attendanceRecords || attendanceRecords.length === 0) {
       return [];
@@ -219,6 +240,79 @@ const AttendanceListPage = () => {
     return Array.from(courses).map(course => JSON.parse(course));
   };
   
+  const fetchCourseAttendance = async (courseId) => {
+    // Similar to fetchAllAttendance but only for the specific course
+    console.log(`Fetching attendance for course ID: ${courseId}`);
+    
+    // For now, we'll simulate API call with mock data
+    setTimeout(() => {
+      // Filter existing records or create course-specific records
+      if (isFacultyOrAdmin) {
+        // Mock course-specific data for faculty/admin
+        const courseAttendanceRecords = [
+          {
+            id: 1,
+            course: { id: courseId, name: courseId === 'CS101' ? 'Computer Science 101' : 
+                                       courseId === 'DB202' ? 'Database Systems' : 
+                                       courseId === 'SE303' ? 'Software Engineering' : 'Unknown Course' },
+            date: '2023-11-10',
+            time: '09:00 AM - 10:30 AM',
+            present: 42,
+            absent: 2,
+            late: 1,
+            total: 45,
+            attendanceRate: 94,
+            topic: 'Object-Oriented Programming: Inheritance'
+          },
+          {
+            id: 2,
+            course: { id: courseId, name: courseId === 'CS101' ? 'Computer Science 101' : 
+                                       courseId === 'DB202' ? 'Database Systems' : 
+                                       courseId === 'SE303' ? 'Software Engineering' : 'Unknown Course' },
+            date: '2023-11-08',
+            time: '09:00 AM - 10:30 AM',
+            present: 41,
+            absent: 3,
+            late: 1,
+            total: 45,
+            attendanceRate: 91,
+            topic: 'Object-Oriented Programming: Classes and Objects'
+          },
+          {
+            id: 3,
+            course: { id: courseId, name: courseId === 'CS101' ? 'Computer Science 101' : 
+                                       courseId === 'DB202' ? 'Database Systems' : 
+                                       courseId === 'SE303' ? 'Software Engineering' : 'Unknown Course' },
+            date: '2023-11-06',
+            time: '09:00 AM - 10:30 AM',
+            present: 39,
+            absent: 5,
+            late: 1,
+            total: 45,
+            attendanceRate: 87,
+            topic: 'File I/O and Exception Handling'
+          }
+        ];
+        
+        setAttendanceRecords(courseAttendanceRecords);
+      } else if (isStudent) {
+        // Get the specific course data from student attendance
+        fetchStudentAttendanceData();
+      }
+      
+      setLoading(false);
+    }, 1000);
+  };
+  
+  const fetchAllAttendance = () => {
+    // Fetch data based on user role
+    if (isFacultyOrAdmin) {
+      fetchFacultyAttendanceData();
+    } else if (isStudent) {
+      fetchStudentAttendanceData();
+    }
+  };
+  
   if (loading) {
     return (
       <div className="page-container">
@@ -233,10 +327,20 @@ const AttendanceListPage = () => {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1 className="page-title">Attendance Management</h1>
+        <h1 className="page-title">
+          {isCourseFilterMode ? `Attendance for ${getCourseNameById(courseId)}` : 'Attendance Management'}
+        </h1>
         
         {isFacultyOrAdmin && (
           <div className="page-actions">
+            {isCourseFilterMode && (
+              <button 
+                className="back-button"
+                onClick={() => navigate('/attendance')}
+              >
+                Back to All Courses
+              </button>
+            )}
             <Link to="/attendance/take" className="take-attendance-btn">
               Take Attendance
             </Link>
@@ -247,32 +351,34 @@ const AttendanceListPage = () => {
       {/* Faculty/Admin View */}
       {isFacultyOrAdmin && (
         <div className="attendance-content">
-          <div className="filters-section">
-            <div className="filter-group">
-              <label htmlFor="courseFilter">Course:</label>
-              <select 
-                id="courseFilter" 
-                value={filter}
-                onChange={handleFilterChange}
-                className="filter-select"
-              >
-                <option value="all">All Courses</option>
-                {getCourseOptions().map(course => (
-                  <option key={course.id} value={course.id}>{course.name}</option>
-                ))}
-              </select>
+          {!isCourseFilterMode && (
+            <div className="filters-section">
+              <div className="filter-group">
+                <label htmlFor="courseFilter">Course:</label>
+                <select 
+                  id="courseFilter" 
+                  value={filter}
+                  onChange={handleFilterChange}
+                  className="filter-select"
+                >
+                  <option value="all">All Courses</option>
+                  {getCourseOptions().map(course => (
+                    <option key={course.id} value={course.id}>{course.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="search-group">
+                <input
+                  type="text"
+                  placeholder="Search by course, topic, or date"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="search-input"
+                />
+              </div>
             </div>
-            
-            <div className="search-group">
-              <input
-                type="text"
-                placeholder="Search by course, topic, or date"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="search-input"
-              />
-            </div>
-          </div>
+          )}
           
           <div className="attendance-table-container">
             <table className="attendance-table">
@@ -317,7 +423,7 @@ const AttendanceListPage = () => {
                     <td className="count-cell late-count">{record.late}</td>
                     <td>
                       <div className="action-buttons">
-                        <Link to={`/attendance/session/${record.id}`} className="view-button">
+                        <Link to={`/attendance/${record.id}`} className="view-button">
                           View Details
                         </Link>
                         <Link to={`/attendance/edit/${record.id}`} className="edit-button">

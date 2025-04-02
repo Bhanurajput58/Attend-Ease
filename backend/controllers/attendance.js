@@ -85,557 +85,153 @@ exports.createAttendance = async (req, res) => {
       console.log(`Existing attendance ID: ${existingAttendance._id}`);
     }
     
-    // If attendance exists, update it instead of creating a new one
-    if (existingAttendance) {
-      console.log('Attendance exists for this date, updating instead');
-      
-      // Process the student records
-      const studentRecords = [];
-      
-      for (const studentData of students) {
-        try {
-          // Validate the student ID is a valid ObjectId
-          if (!mongoose.Types.ObjectId.isValid(studentData.student)) {
-            console.log('Invalid student ID, checking if student exists by roll number:', studentData);
-            
-            // Get roll number, name and discipline from student data
-            const rollNumber = studentData.rollNumber || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-            const name = studentData.name || 'Unknown';
-            const discipline = studentData.discipline || 'Not Specified';
-            
-            console.log(`Processing student with complete details - name: ${name}, roll: ${rollNumber}, discipline: ${discipline} for course: ${course}`);
-            
-            // Try to find student by roll number first
-            let student = null;
-            try {
-              student = await ImportedStudent.findOne({ rollNumber: rollNumber });
-              
-              if (student) {
-                console.log(`Found existing student with roll number: ${rollNumber}, ID: ${student._id}`);
-                
-                // Only update if the existing data is placeholder and new data is better
-                let needsUpdate = false;
-                
-                // Update name if existing is a placeholder
-                if (name && name !== 'Unknown' && 
-                    (student.name === 'Unknown' || student.name === 'Student')) {
-                  student.name = name;
-                  needsUpdate = true;
-                  console.log(`Updating student name to: ${name}`);
-                }
-                
-                // Update discipline if existing is default
-                if (discipline && discipline !== 'Not Specified' && 
-                    student.discipline === 'Not Specified') {
-                  student.discipline = discipline;
-                  needsUpdate = true;
-                  console.log(`Updating student discipline to: ${discipline}`);
-                }
-                
-                // Make sure student is associated with this course
-                if (!student.courses.includes(course)) {
-                  student.courses.push(course);
-                  needsUpdate = true;
-                  console.log(`Adding course ${course} to student ${student._id}`);
-                }
-                
-                // Save updates if needed
-                if (needsUpdate) {
-                  await student.save();
-                  console.log(`Updated student data for ${student._id}`);
-                }
-              } else {
-                // Create a new student with complete details
-                student = await ImportedStudent.create({
-                  name: name,
-                  rollNumber: rollNumber,
-                  discipline: discipline,
-                  courses: [course]
-                });
-                console.log(`Created new student with roll number: ${rollNumber}, ID: ${student._id}`);
-              }
-              
-              const studentRecord = {
-                student: student._id,
-                studentModel: 'ImportedStudent',
-                status: studentData.status.toLowerCase(),
-                remarks: studentData.remarks || ''
-              };
-              
-              studentRecords.push(studentRecord);
-              
-              // Update attendance stats
-              await ImportedStudent.updateAttendanceStats(
-                student._id,
-                course,
-                studentData.status.toLowerCase()
-              );
-            } catch (error) {
-              console.error('Error finding/creating student by roll number:', error);
-              
-              // Fallback to creating a new student
-              const newStudentId = new mongoose.Types.ObjectId();
-              
-              // Update studentRecord with valid ID
-              const studentRecord = {
-                student: newStudentId,
-                studentModel: 'ImportedStudent',
-                status: studentData.status.toLowerCase(),
-                remarks: studentData.remarks || ''
-              };
-              
-              studentRecords.push(studentRecord);
-              
-              // Create a new student in the database with proper details
-              try {
-                // Create new student with all available details
-                const newStudent = await ImportedStudent.create({
-                  _id: newStudentId,
-                  name: name,
-                  rollNumber: rollNumber,
-                  discipline: discipline,
-                  courses: [course]
-                });
-                
-                console.log('Created student with ID:', newStudentId);
-                
-                // Update attendance stats
-                await ImportedStudent.updateAttendanceStats(
-                  newStudentId,
-                  course,
-                  studentData.status.toLowerCase()
-                );
-              } catch (error) {
-                console.error('Error creating student:', error);
-              }
-            }
-          } else {
-            // ID is a valid ObjectId, proceed normally
-            const studentRecord = {
-              student: studentData.student,
-              studentModel: 'ImportedStudent',
-              status: studentData.status.toLowerCase(),
-              remarks: studentData.remarks || ''
-            };
-            
-            studentRecords.push(studentRecord);
-            
-            // Ensure real student data is stored in the database
-            try {
-              // Look up existing student by ID first
-              let student = await ImportedStudent.findById(studentData.student);
-              
-              if (!student) {
-                // If student ID isn't found, try to find by roll number if provided
-                if (studentData.rollNumber && studentData.rollNumber !== 'Unknown') {
-                  student = await ImportedStudent.findOne({ rollNumber: studentData.rollNumber });
-                  
-                  if (student) {
-                    console.log(`Found student by roll number: ${studentData.rollNumber} instead of ID: ${studentData.student}`);
-                    // Update the student record to use the correct ID
-                    studentRecord.student = student._id;
-                  }
-                }
-                
-                // If still no student found, check if it's a User object
-                if (!student) {
-                  const User = require('../models/User');
-                  const userStudent = await User.findById(studentData.student);
-                  
-                  if (userStudent) {
-                    console.log('Student found in User collection:', userStudent.name);
-                    // Update the record to use User model
-                    studentRecord.studentModel = 'User';
-                  } else {
-                    // Create a new student record with the provided details
-                    const name = studentData.name || 'Unknown';
-                    const rollNumber = studentData.rollNumber || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-                    const discipline = studentData.discipline || 'Not Specified';
-                    
-                    console.log(`Creating new student with ID=${studentData.student}, name=${name}, roll=${rollNumber}`);
-                    
-                    student = await ImportedStudent.create({
-                      _id: studentData.student,
-                      name: name,
-                      rollNumber: rollNumber,
-                      discipline: discipline,
-                      courses: [course]
-                    });
-                    
-                    console.log(`Created new student with ID: ${student._id}, name: ${name}`);
-                  }
-                }
-              } else {
-                // Existing student found - update if we have better data
-                let needsUpdate = false;
-                
-                // Update name if existing is placeholder and we have better data
-                if (studentData.name && studentData.name !== 'Unknown' && 
-                    (student.name === 'Unknown' || student.name === 'Student')) {
-                  student.name = studentData.name;
-                  needsUpdate = true;
-                  console.log(`Updating student ${student._id} name to: ${studentData.name}`);
-                }
-                
-                // Update roll number if existing is AUTO and we have better data
-                if (studentData.rollNumber && studentData.rollNumber !== 'Unknown' && 
-                    !studentData.rollNumber.startsWith('AUTO-') && 
-                    student.rollNumber && student.rollNumber.startsWith('AUTO-')) {
-                  student.rollNumber = studentData.rollNumber;
-                  needsUpdate = true;
-                  console.log(`Updating student ${student._id} roll number to: ${studentData.rollNumber}`);
-                }
-                
-                // Update discipline if existing is default and we have better data
-                if (studentData.discipline && studentData.discipline !== 'Not Specified' && 
-                    student.discipline === 'Not Specified') {
-                  student.discipline = studentData.discipline;
-                  needsUpdate = true;
-                  console.log(`Updating student ${student._id} discipline to: ${studentData.discipline}`);
-                }
-                
-                // Ensure course association
-                if (!student.courses.includes(course)) {
-                  student.courses.push(course);
-                  needsUpdate = true;
-                  console.log(`Adding course ${course} to student ${student._id}`);
-                }
-                
-                // Save changes if needed
-                if (needsUpdate) {
-                  await student.save();
-                  console.log(`Updated student ${student._id} with better data`);
-                }
-              }
-              
-              // Update attendance stats if we have a valid student
-              if (student) {
-                await ImportedStudent.updateAttendanceStats(
-                  student._id,
-                  course,
-                  studentData.status.toLowerCase()
-                );
-              }
-            } catch (error) {
-              console.error('Error processing student data:', error);
-            }
-          }
-        } catch (error) {
-          console.error('Error handling student data:', error);
-          // Continue with other students
-        }
-      }
-      
-      // Update the existing attendance record
-      existingAttendance.students = studentRecords;
-      existingAttendance.lastUpdated = Date.now();
-      await existingAttendance.save();
-      
-      // Populate student data for the response
-      await existingAttendance.populate({
-        path: 'students.student',
-        select: 'name rollNumber discipline department semester email courses'
-      });
-      
-      // Convert to plain object and add direct student fields
-      const responseAttendance = existingAttendance.toObject();
-      responseAttendance.students = responseAttendance.students.map(student => {
-        if (student.student && typeof student.student === 'object') {
-          return {
-            ...student,
-            name: student.student.name || 'Unknown',
-            rollNumber: student.student.rollNumber || 'Unknown',
-            discipline: student.student.discipline || 'Not Specified'
-          };
-        }
-        return student;
-      });
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Attendance updated successfully',
-        data: responseAttendance
-      });
-    }
-    
-    // Process students and prepare attendance records
+    // Process all students first to ensure they exist in the database
     const studentRecords = [];
+    const studentResponses = [];
     
-    // Format each student for attendance
+    console.log(`Processing ${students.length} student records`);
+    
     for (const studentData of students) {
       try {
-        // Validate the student ID is a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(studentData.student)) {
-          console.log('Invalid student ID, checking if student exists by roll number:', studentData);
+        let studentId;
+        let studentModel = 'ImportedStudent'; // Default to ImportedStudent model
+        let studentObject = null;
+        
+        // Get roll number, name and discipline from student data
+        const rollNumber = studentData.rollNumber || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+        const name = studentData.name || 'Unknown';
+        const discipline = studentData.discipline || 'Not Specified';
+        
+        console.log(`Processing student: ${name}, ${rollNumber}, ${discipline}`);
+        
+        // Try to find existing student by roll number first
+        let existingStudent = await ImportedStudent.findOne({ rollNumber });
+        
+        if (existingStudent) {
+          console.log(`Found existing student with roll number: ${rollNumber}, ID: ${existingStudent._id}`);
+          studentId = existingStudent._id;
           
-          // Get roll number, name and discipline from student data
-          const rollNumber = studentData.rollNumber || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-          const name = studentData.name || 'Unknown';
-          const discipline = studentData.discipline || 'Not Specified';
+          // Update student data if needed (only if better data is provided)
+          let needsUpdate = false;
           
-          console.log(`Processing student with complete details - name: ${name}, roll: ${rollNumber}, discipline: ${discipline} for course: ${course}`);
-          
-          // Try to find student by roll number first
-          let student = null;
-          try {
-            student = await ImportedStudent.findOne({ rollNumber: rollNumber });
-            
-            if (student) {
-              console.log(`Found existing student with roll number: ${rollNumber}, ID: ${student._id}`);
-              
-              // Only update if the existing data is placeholder and new data is better
-              let needsUpdate = false;
-              
-              // Update name if existing is a placeholder
-              if (name && name !== 'Unknown' && 
-                  (student.name === 'Unknown' || student.name === 'Student')) {
-                student.name = name;
-                needsUpdate = true;
-                console.log(`Updating student name to: ${name}`);
-              }
-              
-              // Update discipline if existing is default
-              if (discipline && discipline !== 'Not Specified' && 
-                  student.discipline === 'Not Specified') {
-                student.discipline = discipline;
-                needsUpdate = true;
-                console.log(`Updating student discipline to: ${discipline}`);
-              }
-              
-              // Make sure student is associated with this course
-              if (!student.courses.includes(course)) {
-                student.courses.push(course);
-                needsUpdate = true;
-                console.log(`Adding course ${course} to student ${student._id}`);
-              }
-              
-              // Save updates if needed
-              if (needsUpdate) {
-                await student.save();
-                console.log(`Updated student data for ${student._id}`);
-              }
-            } else {
-              // Create a new student with complete details
-              student = await ImportedStudent.create({
-                name: name,
-                rollNumber: rollNumber,
-                discipline: discipline,
-                courses: [course]
-              });
-              console.log(`Created new student with roll number: ${rollNumber}, ID: ${student._id}`);
-            }
-            
-            const studentRecord = {
-              student: student._id,
-              studentModel: 'ImportedStudent',
-              status: studentData.status.toLowerCase(),
-              remarks: studentData.remarks || ''
-            };
-            
-            studentRecords.push(studentRecord);
-            
-            // Update attendance stats
-            await ImportedStudent.updateAttendanceStats(
-              student._id,
-              course,
-              studentData.status.toLowerCase()
-            );
-          } catch (error) {
-            console.error('Error finding/creating student by roll number:', error);
-            
-            // Fallback to creating a new student
-            const newStudentId = new mongoose.Types.ObjectId();
-            
-            // Update studentRecord with valid ID
-            const studentRecord = {
-              student: newStudentId,
-              studentModel: 'ImportedStudent',
-              status: studentData.status.toLowerCase(),
-              remarks: studentData.remarks || ''
-            };
-            
-            studentRecords.push(studentRecord);
-            
-            // Create a new student in the database with proper details
-            try {
-              // Create new student with all available details
-              const newStudent = await ImportedStudent.create({
-                _id: newStudentId,
-                name: name,
-                rollNumber: rollNumber,
-                discipline: discipline,
-                courses: [course]
-              });
-              
-              console.log('Created student with ID:', newStudentId);
-              
-              // Update attendance stats
-              await ImportedStudent.updateAttendanceStats(
-                newStudentId,
-                course,
-                studentData.status.toLowerCase()
-              );
-            } catch (error) {
-              console.error('Error creating student:', error);
-            }
+          if (name && name !== 'Unknown' && 
+              (existingStudent.name === 'Unknown' || existingStudent.name === 'Student')) {
+            existingStudent.name = name;
+            needsUpdate = true;
           }
+          
+          if (discipline && discipline !== 'Not Specified' && 
+              existingStudent.discipline === 'Not Specified') {
+            existingStudent.discipline = discipline;
+            needsUpdate = true;
+          }
+          
+          if (!existingStudent.courses.includes(course)) {
+            existingStudent.courses.push(course);
+            needsUpdate = true;
+          }
+          
+          if (needsUpdate) {
+            await existingStudent.save();
+            console.log(`Updated existing student: ${existingStudent._id}`);
+          }
+          
+          studentObject = existingStudent;
         } else {
-          // ID is a valid ObjectId, proceed normally
-          const studentRecord = {
-            student: studentData.student,
-            studentModel: 'ImportedStudent',
-            status: studentData.status.toLowerCase(),
-            remarks: studentData.remarks || ''
-          };
+          // Create a new student record
+          const newStudent = await ImportedStudent.create({
+            name,
+            rollNumber,
+            discipline,
+            courses: [course]
+          });
           
-          studentRecords.push(studentRecord);
-          
-          // Ensure real student data is stored in the database
-          try {
-            // Look up existing student by ID first
-            let student = await ImportedStudent.findById(studentData.student);
-            
-            if (!student) {
-              // If student ID isn't found, try to find by roll number if provided
-              if (studentData.rollNumber && studentData.rollNumber !== 'Unknown') {
-                student = await ImportedStudent.findOne({ rollNumber: studentData.rollNumber });
-                
-                if (student) {
-                  console.log(`Found student by roll number: ${studentData.rollNumber} instead of ID: ${studentData.student}`);
-                  // Update the student record to use the correct ID
-                  studentRecord.student = student._id;
-                }
-              }
-              
-              // If still no student found, check if it's a User object
-              if (!student) {
-                const User = require('../models/User');
-                const userStudent = await User.findById(studentData.student);
-                
-                if (userStudent) {
-                  console.log('Student found in User collection:', userStudent.name);
-                  // Update the record to use User model
-                  studentRecord.studentModel = 'User';
-                } else {
-                  // Create a new student record with the provided details
-                  const name = studentData.name || 'Unknown';
-                  const rollNumber = studentData.rollNumber || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-                  const discipline = studentData.discipline || 'Not Specified';
-                  
-                  console.log(`Creating new student with ID=${studentData.student}, name=${name}, roll=${rollNumber}`);
-                  
-                  student = await ImportedStudent.create({
-                    _id: studentData.student,
-                    name: name,
-                    rollNumber: rollNumber,
-                    discipline: discipline,
-                    courses: [course]
-                  });
-                  
-                  console.log(`Created new student with ID: ${student._id}, name: ${name}`);
-                }
-              }
-            } else {
-              // Existing student found - update if we have better data
-              let needsUpdate = false;
-              
-              // Update name if existing is placeholder and we have better data
-              if (studentData.name && studentData.name !== 'Unknown' && 
-                  (student.name === 'Unknown' || student.name === 'Student')) {
-                student.name = studentData.name;
-                needsUpdate = true;
-                console.log(`Updating student ${student._id} name to: ${studentData.name}`);
-              }
-              
-              // Update roll number if existing is AUTO and we have better data
-              if (studentData.rollNumber && studentData.rollNumber !== 'Unknown' && 
-                  !studentData.rollNumber.startsWith('AUTO-') && 
-                  student.rollNumber && student.rollNumber.startsWith('AUTO-')) {
-                student.rollNumber = studentData.rollNumber;
-                needsUpdate = true;
-                console.log(`Updating student ${student._id} roll number to: ${studentData.rollNumber}`);
-              }
-              
-              // Update discipline if existing is default and we have better data
-              if (studentData.discipline && studentData.discipline !== 'Not Specified' && 
-                  student.discipline === 'Not Specified') {
-                student.discipline = studentData.discipline;
-                needsUpdate = true;
-                console.log(`Updating student ${student._id} discipline to: ${studentData.discipline}`);
-              }
-              
-              // Ensure course association
-              if (!student.courses.includes(course)) {
-                student.courses.push(course);
-                needsUpdate = true;
-                console.log(`Adding course ${course} to student ${student._id}`);
-              }
-              
-              // Save changes if needed
-              if (needsUpdate) {
-                await student.save();
-                console.log(`Updated student ${student._id} with better data`);
-              }
-            }
-            
-            // Update attendance stats if we have a valid student
-            if (student) {
-              await ImportedStudent.updateAttendanceStats(
-                student._id,
-                course,
-                studentData.status.toLowerCase()
-              );
-            }
-          } catch (error) {
-            console.error('Error processing student data:', error);
-          }
+          console.log(`Created new student: ${newStudent._id}`);
+          studentId = newStudent._id;
+          studentObject = newStudent;
         }
+        
+        // Create the student attendance record
+        const studentRecord = {
+          student: studentId,
+          studentModel,
+          status: (studentData.status || '').toLowerCase() === 'present' ? 'present' : 'absent',
+          remarks: studentData.remarks || ''
+        };
+        
+        studentRecords.push(studentRecord);
+        
+        // Add student to student responses for API response
+        studentResponses.push({
+          student: studentId,
+          studentModel,
+          name: studentObject.name,
+          rollNumber: studentObject.rollNumber,
+          discipline: studentObject.discipline,
+          status: studentRecord.status
+        });
+        
+        // Update attendance stats
+        await ImportedStudent.updateAttendanceStats(
+          studentId,
+          course,
+          studentRecord.status
+        );
       } catch (error) {
-        console.error('Error handling student data:', error);
+        console.error('Error processing student:', error);
         // Continue with other students
       }
     }
     
-    // Create attendance record
-    const attendance = await Attendance.create({
-      course,
-      date: new Date(date),
-      students: studentRecords,
-      faculty: userId
-    });
+    // Create or update attendance record
+    let attendanceRecord;
     
-    console.log('Attendance record created successfully:', attendance._id);
+    if (existingAttendance) {
+      // Update existing record
+      existingAttendance.students = studentRecords;
+      existingAttendance.lastUpdated = Date.now();
+      attendanceRecord = await existingAttendance.save();
+      console.log(`Updated existing attendance record: ${attendanceRecord._id}`);
+    } else {
+      // Create new attendance record
+      attendanceRecord = await Attendance.create({
+        course,
+        date: formattedDate,
+        faculty: userId,
+        students: studentRecords
+      });
+      console.log(`Created new attendance record: ${attendanceRecord._id}`);
+    }
     
-    // Populate student data for immediate access in frontend
-    await attendance.populate({
-      path: 'students.student',
-      select: 'name rollNumber discipline department semester email courses'
-    });
+    // Populate attendance record for response
+    const populatedRecord = await Attendance.findById(attendanceRecord._id)
+      .populate('course', 'courseName courseCode')
+      .populate({
+        path: 'students.student',
+        select: 'name rollNumber discipline'
+      });
     
-    // Convert to plain object and add direct student fields
-    const responseAttendance = attendance.toObject();
-    responseAttendance.students = responseAttendance.students.map(student => {
-      if (student.student && typeof student.student === 'object') {
-        return {
-          ...student,
-          name: student.student.name || 'Unknown',
-          rollNumber: student.student.rollNumber || 'Unknown',
-          discipline: student.student.discipline || 'Not Specified'
-        };
-      }
-      return student;
-    });
-    
-    res.status(201).json({
+    // Return success response
+    res.status(existingAttendance ? 200 : 201).json({
       success: true,
-      data: responseAttendance
+      message: existingAttendance ? 'Attendance updated successfully' : 'Attendance recorded successfully',
+      data: {
+        id: populatedRecord._id,
+        course: {
+          id: populatedRecord.course._id,
+          name: populatedRecord.course.courseName,
+          code: populatedRecord.course.courseCode
+        },
+        date: populatedRecord.date,
+        students: studentResponses
+      }
     });
   } catch (error) {
-    console.error('Attendance creation error:', error);
-    res.status(500).json({ 
+    console.error('Error recording attendance:', error);
+    res.status(500).json({
       success: false,
-      message: 'Server Error', 
-      error: error.message 
+      message: 'Server Error',
+      error: error.message
     });
   }
 };
@@ -1061,6 +657,63 @@ exports.exportAttendance = async (req, res) => {
     });
   } catch (error) {
     console.error('Error exporting attendance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get attendance record by ID
+// @route   GET /api/attendance/:id
+// @access  Private
+exports.getAttendanceById = async (req, res) => {
+  try {
+    console.log('Getting attendance by ID:', req.params.id);
+    
+    const attendance = await Attendance.findById(req.params.id)
+      .populate({
+        path: 'students.student',
+        select: 'name rollNumber discipline department semester email courses'
+      })
+      .populate('faculty', 'name email')
+      .populate('course', 'courseName courseCode');
+      
+    if (!attendance) {
+      return res.status(404).json({
+        success: false,
+        message: 'Attendance record not found'
+      });
+    }
+    
+    // Process record to include student details directly for easier frontend access
+    const plainRecord = attendance.toObject();
+    
+    // Process each student entry to include direct access fields
+    plainRecord.students = plainRecord.students.map(studentEntry => {
+      // If student object is populated, copy key details to the main record level
+      if (studentEntry.student && typeof studentEntry.student === 'object') {
+        return {
+          ...studentEntry,
+          // Add these fields directly on the student record for easy access
+          name: studentEntry.student.name,
+          rollNumber: studentEntry.student.rollNumber,
+          discipline: studentEntry.student.discipline || 'Not Specified'
+        };
+      }
+      return studentEntry;
+    });
+    
+    console.log('Attendance record found and processed');
+    
+    // Return the attendance record
+    res.status(200).json({
+      success: true,
+      data: plainRecord
+    });
+  } catch (error) {
+    console.error('Error getting attendance record by ID:', error);
     res.status(500).json({
       success: false,
       message: 'Server Error',

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import { FaUser, FaSignOutAlt, FaHome, FaChartBar, FaCalendarAlt, FaUsers, FaCog } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaHome, FaChartBar, FaCalendarAlt, FaUsers, FaCog, FaFileAlt } from 'react-icons/fa';
 import '../styles/Navbar.css';
 
 const Navbar = () => {
@@ -28,6 +28,7 @@ const Navbar = () => {
           { path: '/faculty/dashboard', label: 'Dashboard', icon: <FaHome /> },
           { path: '/faculty/courses', label: 'Courses', icon: <FaChartBar /> },
           { path: '/faculty/attendance', label: 'Take Attendance', icon: <FaCalendarAlt /> },
+          { path: '/reports/attendance', label: 'Reports', icon: <FaFileAlt /> },
           { path: '/profile', label: 'Profile', icon: <FaUser /> }
         ];
       case 'admin':

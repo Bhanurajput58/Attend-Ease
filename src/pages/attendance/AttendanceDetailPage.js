@@ -1,21 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { PieChart } from '../../components/charts';
 import { useHasRole } from '../../components/RoleBasedAccess';
 import '../../styles/DashboardPage.css';
+import axios from 'axios';
+import { API_ENDPOINTS } from '../../config/api';
 
-const AttendanceDetailPage = () => {
+const AttendanceDetailPage = ({ mode = 'view' }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [attendanceData, setAttendanceData] = useState(null);
   const [studentData, setStudentData] = useState(null);
+  const [error, setError] = useState(null);
   
   // Check if user is faculty or admin
   const isFacultyOrAdmin = useHasRole(['faculty', 'admin']);
   const isStudent = useHasRole(['student']);
+  
+  // Check if we're in edit mode
+  const isEditMode = mode === 'edit';
+  
+  // Check if we're on the faculty attendance route
+  const isFacultyRoute = location.pathname.includes('/faculty/attendance/');
 
   // Mock data for a single attendance record (faculty/admin view)
   const mockAttendanceDetail = {
@@ -91,17 +101,90 @@ const AttendanceDetailPage = () => {
     }
   };
 
-  useEffect(() => {
-    // Simulate API call to fetch attendance data based on user role
-    setTimeout(() => {
-      if (isFacultyOrAdmin) {
+  // Fetch attendance data function with useCallback
+  const fetchAttendanceData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // For both faculty route and regular attendance route, fetch the real attendance data
+      if ((isFacultyRoute && isFacultyOrAdmin) || (!isFacultyRoute && isFacultyOrAdmin)) {
+        try {
+          console.log(`Fetching attendance data for ID: ${id}, Mode: ${mode}`);
+          const response = await axios.get(`${API_ENDPOINTS.GET_ATTENDANCE_BY_ID(id)}`, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            withCredentials: true
+          });
+          
+          if (response.data && response.data.success) {
+            // Calculate attendance statistics based on the fetched data
+            const studentRecords = response.data.data.students || [];
+            const presentCount = studentRecords.filter(student => student.status === 'present').length;
+            const absentCount = studentRecords.filter(student => student.status === 'absent').length;
+            const lateCount = studentRecords.filter(student => student.status === 'late').length;
+            const totalCount = studentRecords.length;
+            const attendanceRate = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+            
+            // Create a complete attendance record with statistics
+            const fullAttendanceData = {
+              ...response.data.data,
+              statistics: {
+                total: totalCount,
+                present: presentCount,
+                absent: absentCount,
+                late: lateCount,
+                attendanceRate: attendanceRate
+              }
+            };
+            
+            setAttendanceData(fullAttendanceData);
+            console.log("Attendance data loaded successfully:", fullAttendanceData);
+            setLoading(false);
+            return;
+          }
+        } catch (apiError) {
+          console.error('Error fetching attendance data from API:', apiError);
+          // Fall back to mock data if API fails
+        }
+        
+        // If API call fails, use mock data but log a warning
+        console.warn('Using mock data as API call failed or returned incomplete data');
         setAttendanceData(mockAttendanceDetail);
       } else if (isStudent) {
+        // For student view, try to fetch the student's own attendance data
+        try {
+          const response = await axios.get(`${API_ENDPOINTS.GET_STUDENT_ATTENDANCE}?classId=${id}`, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            withCredentials: true
+          });
+          
+          if (response.data && response.data.success) {
+            setStudentData(response.data.data);
+            setLoading(false);
+            return;
+          }
+        } catch (apiError) {
+          console.error('Error fetching student attendance data from API:', apiError);
+          // Fall back to mock student data
+        }
+        
         setStudentData(mockStudentData);
       }
+      
       setLoading(false);
-    }, 1000);
-  }, [id, isFacultyOrAdmin, isStudent]);
+    } catch (err) {
+      console.error('Error fetching attendance data:', err);
+      setError('Failed to load attendance data. Please try again.');
+      setLoading(false);
+    }
+  }, [id, isFacultyOrAdmin, isStudent, isFacultyRoute, mode]);
+
+  useEffect(() => {
+    fetchAttendanceData();
+  }, [fetchAttendanceData]);
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -127,9 +210,26 @@ const AttendanceDetailPage = () => {
       </div>
     );
   }
+  
+  if (error) {
+    return (
+      <div className="page-container">
+        <div className="error-container">
+          <h2>Error</h2>
+          <p>{error}</p>
+          <button 
+            className="back-button" 
+            onClick={() => isFacultyRoute ? navigate('/faculty/dashboard') : navigate('/attendance')}
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  // Faculty/Admin View
-  if (isFacultyOrAdmin && attendanceData) {
+  // Faculty/Admin View - Regular view mode
+  if (isFacultyOrAdmin && attendanceData && !isEditMode) {
     return (
       <div className="page-container">
         <div className="page-header">
@@ -145,8 +245,38 @@ const AttendanceDetailPage = () => {
             <button className="print-button" onClick={() => window.print()}>
               Print / Export
             </button>
-            <button className="back-button" onClick={() => navigate('/attendance')}>
-              Back to List
+            <button className="export-button" onClick={() => {
+              // Create CSV content
+              const headers = ['Student ID', 'Roll No.', 'Name', 'Status', 'Check-in Time', 'Notes'];
+              const rows = attendanceData.students.map(student => [
+                student.studentId,
+                student.rollNo || '',
+                student.name,
+                student.status,
+                student.time || '',
+                student.notes || ''
+              ]);
+              
+              // Convert to CSV
+              const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+              ].join('\n');
+              
+              // Create and download the file
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.setAttribute('href', url);
+              link.setAttribute('download', `attendance_${attendanceData.course.id}_${attendanceData.date}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}>
+              Export CSV
+            </button>
+            <button className="back-button" onClick={() => navigate(-1)}>
+              Back
             </button>
           </div>
         </div>
@@ -219,6 +349,15 @@ const AttendanceDetailPage = () => {
                     <span className="stat-value">{attendanceData.statistics.total}</span>
                   </div>
                 </div>
+                <button 
+                  className="refresh-button" 
+                  onClick={() => {
+                    setLoading(true);
+                    fetchAttendanceData();
+                  }}
+                >
+                  Refresh Data
+                </button>
               </div>
             </div>
           </div>
@@ -230,6 +369,7 @@ const AttendanceDetailPage = () => {
                 <thead>
                   <tr>
                     <th>Student ID</th>
+                    <th>Roll No.</th>
                     <th>Name</th>
                     <th>Status</th>
                     <th>Check-in Time</th>
@@ -241,13 +381,14 @@ const AttendanceDetailPage = () => {
                   {attendanceData.students.map(student => (
                     <tr key={student.id}>
                       <td>{student.studentId}</td>
+                      <td>{student.rollNo || '-'}</td>
                       <td>{student.name}</td>
                       <td>
                         <span className={`status-badge ${getStatusClass(student.status)}`}>
                           {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
                         </span>
                       </td>
-                      <td>{student.time}</td>
+                      <td>{student.time || '-'}</td>
                       <td>{student.notes || '-'}</td>
                       <td>
                         <div className="action-buttons">
@@ -259,6 +400,29 @@ const AttendanceDetailPage = () => {
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan="7">
+                      <div className="attendance-summary">
+                        <span className="summary-item">
+                          <strong>Total Students:</strong> {attendanceData.statistics.total}
+                        </span>
+                        <span className="summary-item present-count">
+                          <strong>Present:</strong> {attendanceData.statistics.present}
+                        </span>
+                        <span className="summary-item absent-count">
+                          <strong>Absent:</strong> {attendanceData.statistics.absent}
+                        </span>
+                        <span className="summary-item late-count">
+                          <strong>Late:</strong> {attendanceData.statistics.late}
+                        </span>
+                        <span className="summary-item">
+                          <strong>Attendance Rate:</strong> {attendanceData.statistics.attendanceRate}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
@@ -269,6 +433,36 @@ const AttendanceDetailPage = () => {
               <p>Last modified: {new Date(attendanceData.lastModified).toLocaleString()}</p>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Faculty/Admin View - Edit mode
+  if (isFacultyOrAdmin && attendanceData && isEditMode) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <div className="page-title-section">
+            <h1 className="page-title">Edit Attendance</h1>
+            <p className="page-subtitle">{attendanceData.course.name} - {formatDate(attendanceData.date)}</p>
+          </div>
+          
+          <div className="page-actions">
+            <button className="save-button">
+              Save Changes
+            </button>
+            <button className="cancel-button" onClick={() => navigate(`/attendance/${id}`)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+        
+        <div className="edit-attendance-container">
+          <p>Edit attendance form would go here. For now, please return to the view page.</p>
+          <button className="back-button" onClick={() => navigate(`/attendance/${id}`)}>
+            Back to View
+          </button>
         </div>
       </div>
     );

@@ -18,25 +18,18 @@ export const AuthProvider = ({ children }) => {
 
   const loadUser = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        // Get user profile with role-specific data
-        const response = await api.get(API_ENDPOINTS.GET_USER);
-        
-        if (response.data.success && response.data.user) {
-          setUser(response.data.user);
-          setIsAuthenticated(true);
-          
-          // Store updated user data in localStorage
-          localStorage.setItem('user', JSON.stringify(response.data.user));
-        } else {
-          throw new Error('Invalid response format from server');
-        }
+      // Get user profile with role-specific data
+      // With HTTP-only cookies, we don't need to manually send the token
+      const response = await api.get(API_ENDPOINTS.GET_USER);
+      
+      if (response.data.success && response.data.user) {
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+      } else {
+        throw new Error('Invalid response format from server');
       }
     } catch (error) {
       console.error('Error loading user:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -59,15 +52,13 @@ export const AuthProvider = ({ children }) => {
         throw new Error(response.data.message || 'Login failed');
       }
 
-      const { token, user } = response.data;
+      const { user } = response.data;
       
-      if (!token || !user) {
+      if (!user) {
         throw new Error('Invalid response format from server');
       }
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
       
+      // No need to store token in localStorage as it's in HTTP-only cookie
       setUser(user);
       setIsAuthenticated(true);
       return user;
@@ -107,12 +98,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
-    setError(null);
+  const logout = async () => {
+    try {
+      // Call the logout endpoint to clear the cookie on the server
+      await api.post(API_ENDPOINTS.LOGOUT);
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Clear local state regardless of API call success
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(null);
+    }
   };
 
   // Update profile function
@@ -125,7 +122,6 @@ export const AuthProvider = ({ children }) => {
       
       if (response.data.success && response.data.user) {
         setUser(response.data.user);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
         return response.data.user;
       } else {
         throw new Error('Failed to update profile');

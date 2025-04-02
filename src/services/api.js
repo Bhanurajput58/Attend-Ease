@@ -10,13 +10,10 @@ const api = axios.create({
   withCredentials: true // Enable sending cookies with requests
 });
 
-// Intercept requests to add auth token
+// We no longer need to manually add token to headers since we're using HTTP-only cookies
+// Just keep the error handling part
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
     return config;
   },
   (error) => {
@@ -25,29 +22,18 @@ api.interceptors.request.use(
   }
 );
 
-// Intercept responses to handle errors
+// Add a response interceptor to handle authentication errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
-    console.error('Response error:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message,
-      config: error.config
-    });
-
-    // Handle 401 Unauthorized responses
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+    // If we get a 401 Unauthorized error, it means our cookie is invalid or expired
+    if (error.response && error.response.status === 401) {
+      console.error('Authentication error:', error.response.data);
+      // You could trigger a redirect to login page or clear user state here
+      // This will be handled by the components using the Auth context
     }
-
-    // Handle network errors
-    if (!error.response) {
-      console.error('Network error:', error.message);
-    }
-
     return Promise.reject(error);
   }
 );

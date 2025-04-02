@@ -7,22 +7,21 @@ const Admin = require('../models/Admin');
 // Middleware to protect routes that require authentication
 exports.protect = async (req, res, next) => {
   console.log('Auth middleware checking for token...');
-  console.log('Headers', req.headers);
   
   let token;
   
-  // Check if auth header exists and starts with Bearer
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  // Check for token in cookies first (server-side authentication)
+  if (req.cookies?.token) {
+    token = req.cookies.token;
+    console.log('Token found in cookies');
+  } 
+  // Then fall back to header authorization if needed (for API clients)
+  else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     // Extract token from header
     token = req.headers.authorization.split(' ')[1];
     console.log('Token found in header:', token?.substring(0, 10) + '...');
   } else {
-    console.log('No Bearer token found in Authorization header');
-    // Check for token in cookies as fallback
-    if (req.cookies?.jwt) {
-      token = req.cookies.jwt;
-      console.log('Token found in cookies');
-    }
+    console.log('No token found in cookies or Authorization header');
   }
   
   // If no token found, return error

@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container, Grid, Paper, Typography, CircularProgress, Button, Menu, MenuItem, IconButton, Divider } from '@mui/material';
+import { Box, Container, Grid, Paper, Typography, CircularProgress, Button } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import GetAppIcon from '@mui/icons-material/GetApp';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import DateRangeIcon from '@mui/icons-material/DateRange';
-import ViewWeekIcon from '@mui/icons-material/ViewWeek';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import '../../styles/DashboardPage.css';
-import axios from 'axios';
-import { API_ENDPOINTS } from '../../config/api';
 import useAuth from '../../hooks/useAuth';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../config/api';
+import axios from 'axios';
+import '../../styles/DashboardPage.css';
 
+/**
+ * Faculty Dashboard Component
+ * Displays faculty information, course data, and attendance overview
+ */
 const FacultyDashboard = () => {
-  const { user, token } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState({
@@ -22,32 +20,21 @@ const FacultyDashboard = () => {
     totalStudents: 0,
     averageAttendance: 0,
     recentActivity: [],
-    coursesList: [] // Added to store active courses for quick access
+    coursesList: [] 
   });
   const [error, setError] = useState(null);
-  const [exportLoading, setExportLoading] = useState(false);
   
-  // Menu states for the export options
-  const [formatMenuAnchor, setFormatMenuAnchor] = useState(null);
-  const [periodMenuAnchor, setPeriodMenuAnchor] = useState(null);
-  const [selectedFormat, setSelectedFormat] = useState('pdf');
-  const [selectedPeriod, setSelectedPeriod] = useState('daily');
-  const [selectedCourse, setSelectedCourse] = useState('all');
-  const [courseMenuAnchor, setCourseMenuAnchor] = useState(null);
-
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        console.log('Fetching faculty dashboard data with token:', token ? 'Token exists' : 'No token');
+        console.log('Fetching faculty dashboard data');
         
-        // Fetch dashboard data from API
+        // The token is automatically sent via cookie
         const response = await axios.get(API_ENDPOINTS.GET_FACULTY_DASHBOARD, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          withCredentials: true
         });
         
         console.log('Dashboard API response:', response.data);
@@ -154,167 +141,26 @@ const FacultyDashboard = () => {
       }
     };
 
-    if (token) {
+    if (isAuthenticated) {
       fetchDashboardData();
     } else {
-      console.log('No authentication token available');
+      console.log('User is not authenticated');
       setLoading(false);
     }
-  }, [token]);
+  }, [isAuthenticated]);
 
   const handleTakeAttendance = () => {
     navigate('/faculty/attendance');
   };
 
   const viewAttendanceHistory = (activityId) => {
+    console.log('Viewing attendance details for activity:', activityId);
+    // Navigate to the attendance detail page with the activity ID
     navigate(`/faculty/attendance/${activityId}`);
   };
   
-  // Functions for handling the export menus
-  const handleFormatMenuOpen = (event) => {
-    setFormatMenuAnchor(event.currentTarget);
-  };
-
-  const handleFormatMenuClose = () => {
-    setFormatMenuAnchor(null);
-  };
-
-  const handlePeriodMenuOpen = (event) => {
-    setPeriodMenuAnchor(event.currentTarget);
-  };
-
-  const handlePeriodMenuClose = () => {
-    setPeriodMenuAnchor(null);
-  };
-  
-  const handleCourseMenuOpen = (event) => {
-    setCourseMenuAnchor(event.currentTarget);
-  };
-
-  const handleCourseMenuClose = () => {
-    setCourseMenuAnchor(null);
-  };
-  
-  const handleFormatSelect = (format) => {
-    setSelectedFormat(format);
-    handleFormatMenuClose();
-  };
-
-  const handlePeriodSelect = (period) => {
-    setSelectedPeriod(period);
-    handlePeriodMenuClose();
-  };
-  
-  const handleCourseSelect = (courseId) => {
-    setSelectedCourse(courseId);
-    handleCourseMenuClose();
-  };
-
-  const generateExportFileName = () => {
-    const date = new Date().toISOString().split('T')[0];
-    const courseName = selectedCourse === 'all' 
-      ? 'All-Courses' 
-      : dashboardData.coursesList.find(c => c.id === selectedCourse)?.name.replace(/\s+/g, '-') || 'Course';
-    
-    return `Attendance-${courseName}-${selectedPeriod}-${date}.${selectedFormat === 'excel' ? 'xlsx' : 'pdf'}`;
-  };
-
-  const handleExportReport = async () => {
-    try {
-      setExportLoading(true);
-      
-      if (!token) {
-        throw new Error('No authentication token available. Please log in again.');
-      }
-      
-      console.log(`Exporting ${selectedPeriod} attendance report in ${selectedFormat} format for course: ${selectedCourse}`);
-      console.log('Using token:', token ? `${token.substring(0, 10)}...` : 'No token available');
-      
-      // Get the date range based on the selected period
-      const endDate = new Date();
-      let startDate = new Date();
-      
-      switch(selectedPeriod) {
-        case 'daily':
-          startDate.setHours(0, 0, 0, 0);
-          break;
-        case 'weekly':
-          startDate.setDate(startDate.getDate() - 7);
-          break;
-        case 'monthly':
-          startDate.setMonth(startDate.getMonth() - 1);
-          break;
-        case 'semester':
-          startDate.setMonth(startDate.getMonth() - 6);
-          break;
-        default:
-          startDate.setHours(0, 0, 0, 0);
-      }
-      
-      // Construct URL with query parameters
-      const queryParams = new URLSearchParams({
-        format: selectedFormat,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
-      });
-      
-      if (selectedCourse !== 'all') {
-        queryParams.append('courseId', selectedCourse);
-      }
-      
-      const endpoint = `${API_ENDPOINTS.GET_ATTENDANCE}/export?${queryParams.toString()}`;
-      console.log('Requesting export from endpoint:', endpoint);
-      
-      // Make the request with proper headers
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': selectedFormat === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Your session has expired. Please log in again.');
-        }
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error occurred' }));
-        throw new Error(errorData.message || `Failed to export report: ${response.status}`);
-      }
-      
-      // Get the blob from the response
-      const blob = await response.blob();
-      
-      // Create a blob link to download
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', generateExportFileName());
-      
-      // Append to html page
-      document.body.appendChild(link);
-      
-      // Start download
-      link.click();
-      
-      // Clean up and remove the link
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      console.log('Report downloaded successfully');
-    } catch (error) {
-      console.error('Error exporting report:', error);
-      if (error.message.includes('session has expired')) {
-        // Redirect to login page
-        navigate('/login');
-      } else {
-        alert(`Failed to export report: ${error.message}`);
-      }
-    } finally {
-      setExportLoading(false);
-    }
+  const handleViewReports = () => {
+    navigate('/reports/attendance');
   };
 
   return (
@@ -330,14 +176,22 @@ const FacultyDashboard = () => {
                 Manage your courses and student attendance
               </Typography>
             </div>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleTakeAttendance}
-              sx={{ height: 'fit-content' }}
-            >
-              Take Attendance
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                onClick={handleViewReports}
+              >
+                Attendance Reports
+              </Button>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleTakeAttendance}
+              >
+                Take Attendance
+              </Button>
+            </Box>
           </Box>
 
           {loading ? (
@@ -404,178 +258,6 @@ const FacultyDashboard = () => {
                 </Paper>
               </Grid>
 
-              {/* Export / Reports Section */}
-              <Grid item xs={12}>
-                <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Export Attendance Reports
-                    </Typography>
-                    <Box className="export-controls">
-                      <div className="export-section">
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Generate and download attendance reports in various formats
-                        </Typography>
-                        
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                          {/* Format Selection */}
-                          <div className="export-option">
-                            <Button
-                              variant="outlined"
-                              onClick={handleFormatMenuOpen}
-                              startIcon={selectedFormat === 'pdf' ? <PictureAsPdfIcon /> : <TableChartIcon />}
-                              size="small"
-                            >
-                              {selectedFormat === 'pdf' ? 'PDF' : 'Excel'}
-                            </Button>
-                            <Menu
-                              anchorEl={formatMenuAnchor}
-                              open={Boolean(formatMenuAnchor)}
-                              onClose={handleFormatMenuClose}
-                            >
-                              <MenuItem onClick={() => handleFormatSelect('pdf')}>
-                                <PictureAsPdfIcon fontSize="small" sx={{ mr: 1 }} />
-                                PDF Format
-                              </MenuItem>
-                              <MenuItem onClick={() => handleFormatSelect('excel')}>
-                                <TableChartIcon fontSize="small" sx={{ mr: 1 }} />
-                                Excel Format
-                              </MenuItem>
-                            </Menu>
-                          </div>
-                          
-                          {/* Time Period Selection */}
-                          <div className="export-option">
-                            <Button
-                              variant="outlined"
-                              onClick={handlePeriodMenuOpen}
-                              startIcon={
-                                selectedPeriod === 'daily' ? <CalendarTodayIcon /> : 
-                                selectedPeriod === 'weekly' ? <ViewWeekIcon /> : 
-                                <DateRangeIcon />
-                              }
-                              size="small"
-                            >
-                              {selectedPeriod === 'daily' ? 'Daily' : 
-                               selectedPeriod === 'weekly' ? 'Weekly' : 
-                               selectedPeriod === 'monthly' ? 'Monthly' : 'Semester'}
-                            </Button>
-                            <Menu
-                              anchorEl={periodMenuAnchor}
-                              open={Boolean(periodMenuAnchor)}
-                              onClose={handlePeriodMenuClose}
-                            >
-                              <MenuItem onClick={() => handlePeriodSelect('daily')}>
-                                <CalendarTodayIcon fontSize="small" sx={{ mr: 1 }} />
-                                Daily Report
-                              </MenuItem>
-                              <MenuItem onClick={() => handlePeriodSelect('weekly')}>
-                                <ViewWeekIcon fontSize="small" sx={{ mr: 1 }} />
-                                Weekly Report
-                              </MenuItem>
-                              <MenuItem onClick={() => handlePeriodSelect('monthly')}>
-                                <DateRangeIcon fontSize="small" sx={{ mr: 1 }} />
-                                Monthly Report
-                              </MenuItem>
-                              <MenuItem onClick={() => handlePeriodSelect('semester')}>
-                                <DateRangeIcon fontSize="small" sx={{ mr: 1 }} />
-                                Semester Report
-                              </MenuItem>
-                            </Menu>
-                          </div>
-                          
-                          {/* Course Selection */}
-                          <div className="export-option">
-                            <Button
-                              variant="outlined"
-                              onClick={handleCourseMenuOpen}
-                              size="small"
-                            >
-                              {selectedCourse === 'all' ? 'All Courses' : 
-                               dashboardData.coursesList.find(c => c.id === selectedCourse)?.name || 'Select Course'}
-                            </Button>
-                            <Menu
-                              anchorEl={courseMenuAnchor}
-                              open={Boolean(courseMenuAnchor)}
-                              onClose={handleCourseMenuClose}
-                            >
-                              <MenuItem onClick={() => handleCourseSelect('all')}>
-                                All Courses
-                              </MenuItem>
-                              <Divider />
-                              {dashboardData.coursesList && dashboardData.coursesList.length > 0 ? (
-                                dashboardData.coursesList.map(course => (
-                                  <MenuItem key={course.id} onClick={() => handleCourseSelect(course.id)}>
-                                    {course.name}
-                                  </MenuItem>
-                                ))
-                              ) : (
-                                <MenuItem disabled>No courses available</MenuItem>
-                              )}
-                            </Menu>
-                          </div>
-                          
-                          {/* Export Button */}
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<GetAppIcon />}
-                            onClick={handleExportReport}
-                            disabled={exportLoading}
-                          >
-                            {exportLoading ? 'Exporting...' : 'Export Report'}
-                          </Button>
-                        </Box>
-                        
-                        <Box sx={{ mt: 2 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Quick Export Options:
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                            <Button 
-                              variant="outlined" 
-                              size="small"
-                              onClick={() => {
-                                setSelectedPeriod('daily');
-                                setSelectedFormat('pdf');
-                                setSelectedCourse('all');
-                                setTimeout(handleExportReport, 100);
-                              }}
-                            >
-                              Today's Attendance (PDF)
-                            </Button>
-                            <Button 
-                              variant="outlined" 
-                              size="small"
-                              onClick={() => {
-                                setSelectedPeriod('weekly');
-                                setSelectedFormat('excel');
-                                setSelectedCourse('all');
-                                setTimeout(handleExportReport, 100);
-                              }}
-                            >
-                              Weekly Report (Excel)
-                            </Button>
-                            <Button 
-                              variant="outlined" 
-                              size="small"
-                              onClick={() => {
-                                setSelectedPeriod('monthly');
-                                setSelectedFormat('pdf');
-                                setSelectedCourse('all');
-                                setTimeout(handleExportReport, 100);
-                              }}
-                            >
-                              Monthly Summary (PDF)
-                            </Button>
-                          </Box>
-                        </Box>
-                      </div>
-                    </Box>
-                  </Box>
-                </Paper>
-              </Grid>
-
               {/* Courses List */}
               <Grid item xs={12} md={6}>
                 <Paper className="dashboard-card">
@@ -609,39 +291,6 @@ const FacultyDashboard = () => {
                 </Paper>
               </Grid>
 
-              {/* Quick Stats Card */}
-              <Grid item xs={12} md={6}>
-                <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Attendance Overview
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <div className="stat-item">
-                        <span>Today's classes:</span>
-                        <span className="stat-value">{Math.floor(Math.random() * 3)} scheduled</span>
-                      </div>
-                      <div className="stat-item">
-                        <span>This week:</span>
-                        <span className="stat-value">{dashboardData.recentActivity.length} sessions</span>
-                      </div>
-                      <div className="stat-item">
-                        <span>Low attendance courses:</span>
-                        <span className="stat-value">
-                          {dashboardData.recentActivity.filter(a => a.attendanceRate < 80).length} courses
-                        </span>
-                      </div>
-                      <div className="stat-item">
-                        <span>High attendance courses:</span>
-                        <span className="stat-value">
-                          {dashboardData.recentActivity.filter(a => a.attendanceRate >= 90).length} courses
-                        </span>
-                      </div>
-                    </Box>
-                  </Box>
-                </Paper>
-              </Grid>
-
               {/* Recent Activity Table */}
               <Grid item xs={12}>
                 <Paper className="dashboard-card">
@@ -667,21 +316,46 @@ const FacultyDashboard = () => {
                                 <td>{activity.date}</td>
                                 <td>{activity.course}</td>
                                 <td>{activity.studentsPresent}</td>
+                                
                                 <td>
-                                  <div className="attendance-indicator">
+                                  <div className="attendance-indicator" style={{ position: 'relative', width: '100%', height: '24px', backgroundColor: '#eee', borderRadius: '12px', overflow: 'hidden' }}>
                                     <div 
                                       className={`attendance-bar ${
                                         activity.attendanceRate >= 90 ? 'status-excellent' :
                                         activity.attendanceRate >= 80 ? 'status-good' :
                                         activity.attendanceRate >= 70 ? 'status-average' : 'status-poor'
-                                      }`} 
-                                      style={{ width: `${activity.attendanceRate}%` }}
+                                      }`}
+                                      style={{ 
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: 0,
+                                        height: '100%',
+                                        width: `${activity.attendanceRate}%`,
+                                        transition: 'width 0.3s ease'
+                                      }}
                                     ></div>
-                                    <span className="attendance-value">{activity.attendanceRate}%</span>
+                                    <span style={{
+                                      position: 'absolute',
+                                      left: '50%',
+                                      top: '50%',
+                                      transform: 'translate(-50%, -50%)',
+                                      color: '#000',
+                                      fontSize: '0.875rem',
+                                      fontWeight: 500,
+                                      zIndex: 1
+                                    }}>
+                                      {activity.attendanceRate}%
+                                    </span>
                                   </div>
                                 </td>
+                                
                                 <td className="action-buttons">
-                                  <button className="action-button" onClick={() => viewAttendanceHistory(activity.id)}>
+                                  <button 
+                                    className="action-button" 
+                                    onClick={() => viewAttendanceHistory(activity.id)}
+                                    aria-label={`View attendance details for ${activity.course} on ${activity.date}`}
+                                    title={`View attendance details for ${activity.course}`}
+                                  >
                                     View Details
                                   </button>
                                   <button className="action-button edit" onClick={() => navigate(`/faculty/attendance/edit/${activity.id}`)}>

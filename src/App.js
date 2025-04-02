@@ -9,7 +9,7 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { RoleRequired } from './components/RoleBasedAccess';
 import ApiStatus from './components/ApiStatus';
-import { ReportsPage, ReportDetail } from './pages/reports';
+import { ReportsPage, ReportDetail, AttendanceReportsPage } from './pages/reports';
 import { CourseListPage, CourseDetailPage } from './pages/courses';
 import { AttendanceListPage, TakeAttendancePage, AttendanceDetailPage, SessionDetailPage } from './pages/attendance';
 import { ProfilePage, StatsPage } from './pages/profile';
@@ -66,6 +66,16 @@ const App = () => {
                 <AttendanceManager />
               </RoleRequired>
             } />
+            <Route path="/faculty/attendance/edit/:id" element={
+              <RoleRequired roles={['faculty']}>
+                <AttendanceManager mode="edit" />
+              </RoleRequired>
+            } />
+            <Route path="/faculty/attendance/:id" element={
+              <RoleRequired roles={['faculty']}>
+                <AttendanceDetailPage />
+              </RoleRequired>
+            } />
 
             {/* Admin routes */}
             <Route path="/admin/dashboard" element={
@@ -93,6 +103,11 @@ const App = () => {
                 <ReportsPage />
               </RoleRequired>
             } />
+            <Route path="/reports/attendance" element={
+              <RoleRequired roles={FACULTY_ADMIN_ROLES}>
+                <AttendanceReportsPage />
+              </RoleRequired>
+            } />
             <Route path="/reports/:reportId" element={
               <RoleRequired roles={FACULTY_ADMIN_ROLES}>
                 <ReportDetail />
@@ -113,14 +128,23 @@ const App = () => {
               </RoleRequired>
             } />
             
-            {/* View attendance details - Faculty/Admin only */}
+            {/* More specific attendance routes first */}
             <Route path="/attendance/session/:id" element={
               <RoleRequired roles={FACULTY_ADMIN_ROLES}>
                 <SessionDetailPage />
               </RoleRequired>
             } />
             
-            {/* Student view is restricted in the AttendanceDetailPage component */}
+            {/* More specific routes should come before the generic one */}
+            <Route path="/attendance/edit/:id" element={
+              <RoleRequired roles={FACULTY_ADMIN_ROLES}>
+                <AttendanceDetailPage mode="edit" />
+              </RoleRequired>
+            } />
+            
+            <Route path="/attendance/course/:courseId" element={<AttendanceListPage filter="course" />} />
+            
+            {/* Generic attendance detail - Must be last among attendance routes */}
             <Route path="/attendance/:id" element={<AttendanceDetailPage />} />
             
             <Route path="/settings" element={

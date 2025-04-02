@@ -9,6 +9,7 @@ const dotenv = require('dotenv');
 require('dotenv').config();
 const User = require('./models/User');
 const logger = require('./middleware/logger');
+const cookieParser = require('cookie-parser');
 
 // Load env vars
 dotenv.config();
@@ -80,15 +81,23 @@ connectDB()
   });
 
 // Middleware
-app.use(express.json());
 app.use(cors({
-  origin: true, // Allow all origins in development
-  credentials: true,
+  origin: ['http://localhost:3000', 'https://your-production-domain.com'],
+  credentials: true, // Allow cookies to be sent across domains
+  exposedHeaders: ['Content-Disposition'], // Important for file downloads
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
+app.use(express.json());
+app.use(cookieParser()); // Add cookie parser middleware
 app.use(morgan('dev'));
 app.use(logger);
+
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
 // API Status endpoint - Place this before other routes
 app.get('/api/status', (req, res) => {
@@ -251,9 +260,16 @@ app.post('/api/auth/login', async (req, res) => {
 
     console.log('Login successful for user:', email);
 
+    // Set JWT as HTTP-only cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // true in production
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'strict'
+    });
+
     res.json({
       success: true,
-      token,
       user: userResponse
     });
   } catch (error) {
@@ -302,6 +318,15 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
+// Logout endpoint to clear the cookie
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie('token');
+  return res.status(200).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
+});
+
 // Define routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
@@ -309,6 +334,12 @@ app.use('/api/courses', require('./routes/courses'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/faculty', require('./routes/faculty'));
+
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
 // Default route
 app.get('/', (req, res) => {
@@ -345,10 +376,11 @@ app.get('/api/test-db', async (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    message: 'Server Error', 
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+  console.error('Global error handler caught:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Server error',
+    error: err.message
   });
 });
 
