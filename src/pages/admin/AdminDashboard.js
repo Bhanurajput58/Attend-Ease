@@ -1,8 +1,45 @@
-import React from 'react';
-import { Box, Container, Grid, Paper, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Container, Grid, Paper, Typography, CircularProgress } from '@mui/material';
+import axios from 'axios';
+import { API_ENDPOINTS } from '../../config/api';
 import '../../styles/DashboardPage.css';
 
 const AdminDashboard = () => {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeCourses: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      const [usersResponse, coursesResponse] = await Promise.all([
+        axios.get(API_ENDPOINTS.GET_USERS, { withCredentials: true }),
+        axios.get(API_ENDPOINTS.GET_COURSES, { withCredentials: true })
+      ]);
+
+      if (usersResponse.data.success && coursesResponse.data.success) {
+        setStats({
+          totalUsers: usersResponse.data.data.length,
+          activeCourses: coursesResponse.data.data.length
+        });
+      } else {
+        setError('Failed to fetch dashboard statistics');
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+      setError('Error loading dashboard statistics');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-content">
@@ -16,17 +53,27 @@ const AdminDashboard = () => {
             </Typography>
           </Box>
 
+          {error && (
+            <Box sx={{ mb: 3 }}>
+              <Typography color="error">{error}</Typography>
+            </Box>
+          )}
+
           <Grid container spacing={3}>
             {/* Total Users Card */}
-            <Grid item xs={12} md={6} lg={4}>
+            <Grid item xs={12} md={6} lg={6}>
               <Paper className="dashboard-card">
                 <Box sx={{ p: 2 }}>
                   <Typography variant="h6" gutterBottom>
                     Total Users
                   </Typography>
-                  <Typography variant="h3" color="primary">
-                    500
-                  </Typography>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Typography variant="h3" color="primary">
+                      {stats.totalUsers}
+                    </Typography>
+                  )}
                   <Typography variant="body2" color="text.secondary">
                     Registered users
                   </Typography>
@@ -35,82 +82,22 @@ const AdminDashboard = () => {
             </Grid>
 
             {/* Active Courses Card */}
-            <Grid item xs={12} md={6} lg={4}>
+            <Grid item xs={12} md={6} lg={6}>
               <Paper className="dashboard-card">
                 <Box sx={{ p: 2 }}>
                   <Typography variant="h6" gutterBottom>
                     Active Courses
                   </Typography>
-                  <Typography variant="h3" color="primary">
-                    25
-                  </Typography>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Typography variant="h3" color="primary">
+                      {stats.activeCourses}
+                    </Typography>
+                  )}
                   <Typography variant="body2" color="text.secondary">
                     Current semester courses
                   </Typography>
-                </Box>
-              </Paper>
-            </Grid>
-
-            {/* System Status Card */}
-            <Grid item xs={12} md={6} lg={4}>
-              <Paper className="dashboard-card">
-                <Box sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    System Status
-                  </Typography>
-                  <Typography variant="h3" color="success.main">
-                    99.9%
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Uptime
-                  </Typography>
-                </Box>
-              </Paper>
-            </Grid>
-
-            {/* Recent Activity Table */}
-            <Grid item xs={12}>
-              <Paper className="dashboard-card">
-                <Box sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Recent System Activity
-                  </Typography>
-                  <Box sx={{ overflowX: 'auto' }}>
-                    <table className="attendance-table">
-                      <thead>
-                        <tr>
-                          <th>Timestamp</th>
-                          <th>Action</th>
-                          <th>User</th>
-                          <th>Details</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>2024-03-15 10:30</td>
-                          <td>User Registration</td>
-                          <td>New Student</td>
-                          <td>Computer Science</td>
-                          <td><span className="status success">Completed</span></td>
-                        </tr>
-                        <tr>
-                          <td>2024-03-15 09:15</td>
-                          <td>Course Creation</td>
-                          <td>Admin</td>
-                          <td>New Course Added</td>
-                          <td><span className="status success">Completed</span></td>
-                        </tr>
-                        <tr>
-                          <td>2024-03-15 08:45</td>
-                          <td>System Update</td>
-                          <td>System</td>
-                          <td>Database Backup</td>
-                          <td><span className="status success">Completed</span></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </Box>
                 </Box>
               </Paper>
             </Grid>

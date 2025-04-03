@@ -99,9 +99,6 @@ const AttendanceManager = () => {
       // Try to fetch existing attendance for today
       const fetchTodayAttendance = async () => {
         try {
-          const token = localStorage.getItem('token');
-          if (!token) return;
-          
           console.log(`Fetching attendance for course ${courseId} on date ${date}`);
           const formattedDate = new Date(date).toISOString().split('T')[0];
           console.log(`Formatted date for API request: ${formattedDate}`);
@@ -109,9 +106,7 @@ const AttendanceManager = () => {
           const response = await axios.get(
             `${API_ENDPOINTS.GET_ATTENDANCE}?course=${courseId}&date=${formattedDate}`,
             {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
+              withCredentials: true
             }
           );
           
@@ -178,9 +173,7 @@ const AttendanceManager = () => {
               const studentsResponse = await axios.get(
                 `${API_ENDPOINTS.GET_COURSES}/${courseId}/students`,
                 {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
+                  withCredentials: true
                 }
               );
               
@@ -471,24 +464,15 @@ const AttendanceManager = () => {
       
       console.log('Sending attendance data:', JSON.stringify(attendanceData, null, 2));
       
-      // Make API request to save attendance
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
-      
       // Log the actual request being made
       console.log(`Sending POST request to: ${API_ENDPOINTS.CREATE_ATTENDANCE}`);
-      console.log('With headers:', { 'Authorization': `Bearer ${token.substring(0, 10)}...`, 'Content-Type': 'application/json' });
       
+      // Use withCredentials to send cookies with the request
       const response = await axios.post(
         API_ENDPOINTS.CREATE_ATTENDANCE, 
         attendanceData,
         {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          withCredentials: true // This will send the HTTP-only cookies with the request
         }
       );
       

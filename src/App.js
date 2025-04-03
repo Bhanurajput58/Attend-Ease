@@ -21,6 +21,7 @@ import StudentAttendance from './pages/student/StudentAttendance';
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
 import AttendanceManager from './pages/faculty/AttendanceManager';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import EnhancedAdminDashboard from './pages/admin/EnhancedAdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
 
 // Define route access by role
@@ -81,7 +82,7 @@ const App = () => {
             {/* Admin routes */}
             <Route path="/admin/dashboard" element={
               <RoleRequired roles={['admin']}>
-                <AdminDashboard />
+                <EnhancedAdminDashboard />
               </RoleRequired>
             } />
             <Route path="/admin/users" element={
