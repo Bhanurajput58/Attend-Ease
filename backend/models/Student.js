@@ -17,11 +17,11 @@ const studentSchema = new mongoose.Schema({
   },
   department: {
     type: String,
-    required: true
+    default: 'Not Specified'
   },
   semester: {
     type: Number,
-    required: true
+    default: 1
   },
   enrollmentDate: {
     type: Date,
@@ -29,14 +29,15 @@ const studentSchema = new mongoose.Schema({
   },
   rollNumber: {
     type: String,
-    unique: true
+    required: true
   },
   currentSemester: {
     type: Number,
     default: 1
   },
   major: {
-    type: String
+    type: String,
+    default: 'Not Specified'
   },
   gpa: {
     type: Number,
@@ -166,8 +167,7 @@ studentSchema.statics.importFromExcel = async function(students, courseId) {
   return this.bulkWrite(operations);
 };
 
-// Index for efficient Excel data querying
-studentSchema.index({ excelImportId: 1 });
-studentSchema.index({ rollNumber: 1 }, { unique: true });
+// Create a compound index for rollNumber to ensure uniqueness but allow for nulls
+studentSchema.index({ rollNumber: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Student', studentSchema);

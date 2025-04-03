@@ -13,6 +13,7 @@ import { ReportsPage, ReportDetail, AttendanceReportsPage } from './pages/report
 import { CourseListPage, CourseDetailPage } from './pages/courses';
 import { AttendanceListPage, TakeAttendancePage, AttendanceDetailPage, SessionDetailPage } from './pages/attendance';
 import { ProfilePage, StatsPage } from './pages/profile';
+import StudentDetailPage from './pages/students/StudentDetailPage';
 
 // Import role-specific pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -146,6 +147,13 @@ const App = () => {
             
             {/* Generic attendance detail - Must be last among attendance routes */}
             <Route path="/attendance/:id" element={<AttendanceDetailPage />} />
+            
+            {/* Student routes */}
+            <Route path="/students/:id" element={
+              <RoleRequired roles={FACULTY_ADMIN_ROLES}>
+                <StudentDetailPage />
+              </RoleRequired>
+            } />
             
             <Route path="/settings" element={
               <div className="content-container">

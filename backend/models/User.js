@@ -29,7 +29,9 @@ const userSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true,
+    minlength: [3, 'Username must be at least 3 characters']
   },
   profileImage: {
     type: String,
@@ -43,13 +45,13 @@ const userSchema = new mongoose.Schema({
 
 // Encrypt password before saving
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    console.log('Password not modified, skipping hashing');
-    next();
-    return;
-  }
-  console.log('Hashing password for user:', this.email);
   try {
+    if (!this.isModified('password')) {
+      console.log('Password not modified, skipping hashing');
+      return next();
+    }
+    
+    console.log('Hashing password for user:', this.email);
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     console.log('Password hashed successfully');
@@ -62,11 +64,11 @@ userSchema.pre('save', async function(next) {
 
 // Match password
 userSchema.methods.matchPassword = async function(enteredPassword) {
-  console.log('Comparing passwords:');
-  console.log('Entered password length:', enteredPassword.length);
-  console.log('Stored hashed password:', this.password.substring(0, 20) + '...');
-  
   try {
+    console.log('Comparing passwords:');
+    console.log('Entered password length:', enteredPassword.length);
+    console.log('Stored hashed password:', this.password.substring(0, 20) + '...');
+    
     const isMatch = await bcrypt.compare(enteredPassword, this.password);
     console.log('Password comparison result:', isMatch);
     return isMatch;
@@ -75,5 +77,9 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
     return false;
   }
 };
+
+// Create unique indices
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ username: 1 }, { unique: true });
 
 module.exports = mongoose.model('User', userSchema); 

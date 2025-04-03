@@ -68,6 +68,7 @@ export const API_ENDPOINTS = {
     GET_ALL_USERS: `${API_BASE_URL}/admin/users`,
     GET_ALL_STUDENTS: `${API_BASE_URL}/admin/students`,
     GET_ALL_FACULTY: `${API_BASE_URL}/admin/faculty`,
+    CONVERT_STUDENTS_TO_USERS: `${API_BASE_URL}/admin/convert-students-to-users`,
     
     // Common endpoints
     GET_NOTIFICATIONS: `${API_BASE_URL}/notifications`,

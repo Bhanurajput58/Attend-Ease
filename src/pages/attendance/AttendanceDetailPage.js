@@ -247,14 +247,11 @@ const AttendanceDetailPage = ({ mode = 'view' }) => {
             </button>
             <button className="export-button" onClick={() => {
               // Create CSV content
-              const headers = ['Student ID', 'Roll No.', 'Name', 'Status', 'Check-in Time', 'Notes'];
+              const headers = ['Roll No.', 'Name', 'Status'];
               const rows = attendanceData.students.map(student => [
-                student.studentId,
-                student.rollNo || '',
+                student.rollNumber || '',
                 student.name,
-                student.status,
-                student.time || '',
-                student.notes || ''
+                student.status
               ]);
               
               // Convert to CSV
@@ -368,31 +365,25 @@ const AttendanceDetailPage = ({ mode = 'view' }) => {
               <table className="students-table">
                 <thead>
                   <tr>
-                    <th>Student ID</th>
                     <th>Roll No.</th>
                     <th>Name</th>
                     <th>Status</th>
-                    <th>Check-in Time</th>
-                    <th>Notes</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {attendanceData.students.map(student => (
                     <tr key={student.id}>
-                      <td>{student.studentId}</td>
-                      <td>{student.rollNo || '-'}</td>
+                      <td>{student.rollNumber || '-'}</td>
                       <td>{student.name}</td>
                       <td>
                         <span className={`status-badge ${getStatusClass(student.status)}`}>
                           {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
                         </span>
                       </td>
-                      <td>{student.time || '-'}</td>
-                      <td>{student.notes || '-'}</td>
                       <td>
                         <div className="action-buttons">
-                          <Link to={`/students/${student.id}`} className="view-button">
+                          <Link to={`/students/${student.student}`} className="view-button">
                             View Profile
                           </Link>
                         </div>
@@ -402,7 +393,7 @@ const AttendanceDetailPage = ({ mode = 'view' }) => {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan="7">
+                    <td colSpan="4">
                       <div className="attendance-summary">
                         <span className="summary-item">
                           <strong>Total Students:</strong> {attendanceData.statistics.total}

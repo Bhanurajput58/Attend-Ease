@@ -334,6 +334,7 @@ app.use('/api/courses', require('./routes/courses'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/faculty', require('./routes/faculty'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
