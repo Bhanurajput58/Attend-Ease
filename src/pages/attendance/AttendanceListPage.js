@@ -423,7 +423,18 @@ const AttendanceListPage = ({ filter: filterProp }) => {
                     <td className="count-cell late-count">{record.late}</td>
                     <td>
                       <div className="action-buttons">
-                        <Link to={`/attendance/${record.id}`} className="view-button">
+                        <Link 
+                          to={`/attendance/${record.id}`} 
+                          className="view-button" 
+                          onClick={() => {
+                            try {
+                              sessionStorage.setItem('selectedActivity', JSON.stringify(record));
+                              console.log('Stored record in session storage for detail view:', record);
+                            } catch (error) {
+                              console.error('Error storing record data:', error);
+                            }
+                          }}
+                        >
                           View Details
                         </Link>
                         <Link to={`/attendance/edit/${record.id}`} className="edit-button">

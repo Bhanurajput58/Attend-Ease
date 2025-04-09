@@ -189,33 +189,80 @@ exports.getCourseStudents = async (req, res) => {
       courses: courseId 
     }).select('name rollNumber discipline');
     
+    // Format the students with full name
+    const studentsWithFullName = students.map(student => ({
+      _id: student._id,
+      name: student.name,
+      fullName: student.name,
+      rollNumber: student.rollNumber,
+      discipline: student.discipline
+    }));
+    
     // If no imported students, try to get regular students
     if (students.length === 0 && course.students.length > 0) {
       // This course has students but they're not in the ImportedStudent collection
       const User = require('../models/User');
-      const regularStudents = await User.find({
-        _id: { $in: course.students }
-      }).select('name email');
+      const Student = require('../models/Student');
       
-      // Convert regular students to the expected format
-      const formattedStudents = regularStudents.map(student => ({
-        _id: student._id,
-        name: student.name,
-        rollNumber: student.email.split('@')[0],
+      // Get all user IDs in the course
+      const userIds = course.students;
+      
+      // First try to get student records that might have more complete data
+      const studentRecords = await Student.find({
+        user: { $in: userIds }
+      }).populate('user', 'name email');
+      
+      // Create a map of user IDs to student records for quick lookup
+      const userIdToStudent = {};
+      studentRecords.forEach(record => {
+        if (record.user) {
+          userIdToStudent[record.user._id.toString()] = record;
+        }
+      });
+      
+      // Get regular users for any IDs not found in student records
+      const unmappedUserIds = userIds.filter(id => 
+        !userIdToStudent[id.toString()]
+      );
+      
+      const regularUsers = unmappedUserIds.length > 0 
+        ? await User.find({ _id: { $in: unmappedUserIds } }).select('name email')
+        : [];
+      
+      // Format student records
+      const studentsFromRecords = studentRecords.map(record => ({
+        _id: record._id,
+        user: record.user?._id || record.user,
+        name: record.name || (record.user ? record.user.name : 'Unknown'),
+        fullName: record.name || (record.user ? record.user.name : 'Unknown'),
+        rollNumber: record.rollNumber || (record.user ? record.user.email.split('@')[0] : 'Unknown'),
+        discipline: record.discipline || 'Not Specified'
+      }));
+      
+      // Format regular users (without student records)
+      const formattedRegularUsers = regularUsers.map(user => ({
+        _id: user._id,
+        user: user._id,
+        name: user.name,
+        fullName: user.name,
+        rollNumber: user.email.split('@')[0],
         discipline: 'Not Specified'
       }));
       
+      // Combine both sets of students
+      const combinedStudents = [...studentsFromRecords, ...formattedRegularUsers];
+      
       return res.status(200).json({
         success: true,
-        count: formattedStudents.length,
-        data: formattedStudents
+        count: combinedStudents.length,
+        data: combinedStudents
       });
     }
     
     res.status(200).json({
       success: true,
-      count: students.length,
-      data: students
+      count: studentsWithFullName.length,
+      data: studentsWithFullName
     });
   } catch (error) {
     console.error('Error getting course students:', error);

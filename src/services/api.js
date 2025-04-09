@@ -1,5 +1,8 @@
 import axios from 'axios';
-import API_BASE_URL from '../config/api';
+import { API_ENDPOINTS } from '../config/api';
+
+// Get API_BASE_URL from the API_ENDPOINTS object
+const API_BASE_URL = API_ENDPOINTS.GET_ATTENDANCE.split('/attendance')[0];
 
 // Create axios instance with default config
 const api = axios.create({

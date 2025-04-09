@@ -31,7 +31,7 @@ import {
 import { CloudUpload, PersonAdd, Save, Download, Check, DeleteOutline } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import useAuth from '../../hooks/useAuth';
-import axios from 'axios';
+import api from '../../services/api';
 import { API_ENDPOINTS } from '../../config/api';
 import '../../styles/AttendancePage.css';
 
@@ -103,7 +103,7 @@ const AttendanceManager = () => {
           const formattedDate = new Date(date).toISOString().split('T')[0];
           console.log(`Formatted date for API request: ${formattedDate}`);
           
-          const response = await axios.get(
+          const response = await api.get(
             `${API_ENDPOINTS.GET_ATTENDANCE}?course=${courseId}&date=${formattedDate}`,
             {
               withCredentials: true
@@ -123,41 +123,22 @@ const AttendanceManager = () => {
             // Map the students from the attendance record
             const studentRecords = attendanceData.students.map(record => {
               // Handle both populated and unpopulated student references
-              const studentObj = record.student;
+              let studentObj = record.student;
+              let isValidObject = studentObj && typeof studentObj === 'object';
               
-              console.log('Student record from API:', record);
-              console.log('Student object:', studentObj);
+              // Extract values with proper fallbacks
+              const name = isValidObject ? studentObj.name : 'Unknown Student';
+              const rollNumber = isValidObject ? studentObj.rollNumber : 'No Roll Number';
+              const discipline = isValidObject ? (studentObj.discipline || 'Not Specified') : 'Not Specified';
               
-              // Check if studentObj is a proper object or just an ID string
-              const isValidObject = typeof studentObj === 'object' && studentObj !== null;
+              // Check if this is an AUTO-generated placeholder student
+              const isAutoPlaceholder = rollNumber && rollNumber.toString().startsWith('AUTO-');
               
-              // Get name and roll number with better fallbacks
-              // First try to use the direct properties on the record, then fall back to student object
-              const name = record.name ? record.name : 
-                (isValidObject ? studentObj.name : 'Unknown');
-              
-              const rollNumber = record.rollNumber ? record.rollNumber :
-                (isValidObject ? (studentObj.rollNumber || 'Unknown') : 'Unknown');
-              
-              const discipline = record.discipline ? record.discipline :
-                (isValidObject ? (studentObj.discipline || 'Not Specified') : 'Not Specified');
-              
-              // Skip AUTO placeholder students if we can identify them
-              const isAutoPlaceholder = isValidObject && 
-                studentObj.rollNumber && 
-                studentObj.rollNumber.startsWith('AUTO-') &&
-                studentObj.name === 'Student';
-              
-              // Use cleaned up data for AUTO placeholders
-              const displayName = isAutoPlaceholder ? 'Unknown Student' : name;
-              const displayRollNumber = isAutoPlaceholder ? 'No Roll Number' : rollNumber;
-              
-              console.log(`Processed student: ${displayName}, ${displayRollNumber}, ${discipline}`);
-              
+              // Even for AUTO placeholders, use the real data we have
               return {
                 id: isValidObject ? studentObj._id : record.student,
-                name: displayName,
-                rollNumber: displayRollNumber,
+                name: name,
+                rollNumber: rollNumber,
                 status: record.status === 'present' ? 'Present' : 'Absent',
                 discipline: discipline,
                 isPlaceholder: isAutoPlaceholder
@@ -170,7 +151,7 @@ const AttendanceManager = () => {
             // Try to fetch students enrolled in this course
             try {
               console.log(`No existing attendance found. Fetching students for course: ${courseId}`);
-              const studentsResponse = await axios.get(
+              const studentsResponse = await api.get(
                 `${API_ENDPOINTS.GET_COURSES}/${courseId}/students`,
                 {
                   withCredentials: true
@@ -182,7 +163,7 @@ const AttendanceManager = () => {
               if (studentsResponse.data.success && studentsResponse.data.data.length > 0) {
                 const enrolledStudents = studentsResponse.data.data.map(student => ({
                   id: student._id,
-                  name: student.name,
+                  name: student.fullName || student.name || 'Unknown Student',
                   rollNumber: student.rollNumber || 'Unknown',
                   status: 'Present', // Default all to present
                   discipline: student.discipline || 'Not Specified'
@@ -385,125 +366,157 @@ const AttendanceManager = () => {
     setClearSuccess(false);
   };
 
+  // Function to fetch attendance data for today
+  const fetchTodayAttendance = async () => {
+    try {
+      if (!courseId) return;
+
+      console.log('Fetching attendance data for course:', courseId, 'on date:', date);
+      const response = await api.get(`${API_ENDPOINTS.GET_ATTENDANCE}?course=${courseId}&date=${date}`);
+      
+      console.log('API Response for attendance:', response.data);
+      
+      if (response.data.success && response.data.data.length > 0) {
+        const attendanceData = response.data.data[0];
+        console.log('Attendance data received:', attendanceData);
+        
+        // Make sure we have proper student data
+        const processedStudents = attendanceData.students.map(student => {
+          // Properly handle the student object which might be nested
+          const studentObj = student.student;
+          const isValidObject = studentObj && typeof studentObj === 'object';
+          
+          // Extract data with proper fallbacks
+          const name = isValidObject 
+            ? (studentObj.name || 'Unknown') 
+            : (student.name || 'Unknown');
+            
+          const rollNumber = isValidObject 
+            ? (studentObj.rollNumber || 'No Roll Number') 
+            : (student.rollNumber || 'No Roll Number');
+            
+          const discipline = isValidObject 
+            ? (studentObj.discipline || 'Not Specified') 
+            : (student.discipline || 'Not Specified');
+          
+          // Create student object with all required fields  
+          return {
+            id: isValidObject ? studentObj._id : student.student,
+            _id: isValidObject ? studentObj._id : student.student,
+            name: name,
+            rollNumber: rollNumber,
+            discipline: discipline,
+            status: student.status === 'present' ? 'Present' : 'Absent',
+            remarks: student.remarks || ''
+          };
+        });
+        
+        console.log('Processed student data:', processedStudents);
+        setStudents(processedStudents);
+      } else {
+        console.log('No attendance records found for the selected date');
+        // If no attendance found, you may want to load enrolled students instead
+      }
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+    }
+  };
+
   // Function to save attendance data to the backend
   const saveAttendance = async () => {
-    if (!courseId) {
-      setSaveError('Please select a course first.');
-      return;
-    }
-    
-    if (students.length === 0) {
-      setSaveError('No students to save attendance for.');
-      return;
-    }
-    
     try {
       setIsSaving(true);
       setSaveError('');
       
-      // Ensure all students have proper data before sending
-      const cleanedStudents = students.map(student => {
-        // Try to clean up the data as much as possible
-        // This ensures that placeholder values don't override real data
-        return {
-          ...student,
-          name: student.name && student.name !== 'Unknown' ? student.name : 'Unknown',
-          rollNumber: student.rollNumber && student.rollNumber !== 'Unknown' ? student.rollNumber : 'Unknown',
-          discipline: student.discipline && student.discipline !== 'Not Specified' ? student.discipline : 'Not Specified'
-        };
-      });
+      if (!courseId) {
+        setSaveError('Please select a course');
+        return;
+      }
       
-      // Log cleaned students data
-      console.log('Cleaned student data for saving:', cleanedStudents);
+      if (students.length === 0) {
+        setSaveError('No students to save attendance for');
+        return;
+      }
       
-      // For imported students with numeric IDs, create valid MongoDB ObjectIds
-      const processedStudents = cleanedStudents.map(student => {
-        // Check if id is numeric and not a MongoDB ObjectID
-        const isNumericId = typeof student.id === 'number' || 
-          (typeof student.id === 'string' && /^\d+$/.test(student.id) && student.id.length < 12);
+      // Log student data for verification
+      console.log('Students array:', students);
+      console.log('First student object:', students[0]);
+      console.log('Student IDs:', students.map(s => ({ id: s.id, _id: s._id })));
+      
+      // Format the date to match backend expectations
+      const formattedDate = new Date(date).toISOString();
+      
+      // Prepare student data in the format expected by the backend
+      const studentRecords = students.map(student => {
+        // Determine the student ID to use
+        let studentId = student.id || student._id;
         
-        // Generate a random hex string (24 characters) to mimic a MongoDB ObjectId
-        const generateObjectIdLike = () => {
-          const hexChars = '0123456789abcdef';
-          let result = '';
-          for (let i = 0; i < 24; i++) {
-            result += hexChars[Math.floor(Math.random() * 16)];
-          }
-          return result;
-        };
+        // If the student ID starts with 'TEMP_', we need to create a new student in the database
+        const isTemporaryId = typeof studentId === 'string' && studentId.startsWith('TEMP_');
         
-        // If it's a numeric ID, create a proper ObjectId-like string (24 hex chars)
-        const studentId = isNumericId ? generateObjectIdLike() : student.id;
-        
-        // Make sure name and rollNumber are never blank or undefined
-        const finalName = student.name && student.name !== 'Unknown' ? student.name : 'Unknown';
-        const finalRollNumber = student.rollNumber && student.rollNumber !== 'Unknown' ? student.rollNumber : `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-        const finalDiscipline = student.discipline && student.discipline !== 'Not Specified' ? student.discipline : 'Not Specified';
-        
-        console.log(`Processing student: ${finalName}, ${finalRollNumber}, ${finalDiscipline}`);
-        
-        // Include all student information for properly populating/updating the database
-        return {
+        // Create the base record with all student details
+        // Always include full student details to ensure database has the most up-to-date information
+        const record = {
           student: studentId,
-          status: student.status === 'Present' ? 'present' : 'absent',
-          remarks: '',
-          // Include all student details to ensure they're saved correctly
-          name: finalName, 
-          rollNumber: finalRollNumber,
-          discipline: finalDiscipline,
-          isPlaceholder: false // Force all students to not be placeholders to ensure real data is used
+          studentModel: 'ImportedStudent',
+          status: student.status.toLowerCase(),
+          remarks: student.remarks || '',
+          // Always include all student details to ensure proper database update
+          name: student.name,
+          rollNumber: student.rollNumber,
+          discipline: student.discipline || 'Not Specified',
+          program: 'B.tech',
+          semester: 4
         };
+        
+        // If it's a temporary ID, also include it in the studentData field
+        if (isTemporaryId) {
+          record.createNewStudent = true;
+          record.studentData = {
+            name: student.name,
+            rollNumber: student.rollNumber,
+            discipline: student.discipline || 'Not Specified',
+            program: 'B.tech',
+            semester: 4
+          };
+        }
+        
+        return record;
       });
       
-      // Format attendance data for API
-      const attendanceData = {
+      console.log('Prepared student records:', studentRecords);
+      
+      // Debug log for API endpoint
+      console.log('API endpoint being used:', API_ENDPOINTS.CREATE_ATTENDANCE);
+      
+      // Create the request payload
+      const requestPayload = {
         course: courseId,
-        date: date,
-        students: processedStudents
+        date: formattedDate,
+        students: studentRecords
       };
       
-      console.log('Sending attendance data:', JSON.stringify(attendanceData, null, 2));
+      console.log('Full request payload:', JSON.stringify(requestPayload, null, 2));
       
-      // Log the actual request being made
-      console.log(`Sending POST request to: ${API_ENDPOINTS.CREATE_ATTENDANCE}`);
+      // Make the API call to save attendance
+      const response = await api.post(API_ENDPOINTS.CREATE_ATTENDANCE, requestPayload);
       
-      // Use withCredentials to send cookies with the request
-      const response = await axios.post(
-        API_ENDPOINTS.CREATE_ATTENDANCE, 
-        attendanceData,
-        {
-          withCredentials: true // This will send the HTTP-only cookies with the request
-        }
-      );
+      console.log('Save attendance response:', response.data);
       
-      console.log('Attendance API Response:', response.data);
-      
-      if (response.data && response.data.success) {
+      if (response.data.success) {
         setSaveSuccess(true);
-        console.log('Attendance saved successfully', response.data);
-        
-        // Update student IDs with proper database IDs from response
-        if (response.data.data && response.data.data.students) {
-          const savedStudents = response.data.data.students;
-          
-          // Create a mapping of student indices to their new database IDs
-          const updatedStudents = [...cleanedStudents];
-          savedStudents.forEach((savedStudent, index) => {
-            if (index < updatedStudents.length) {
-              updatedStudents[index].id = savedStudent.student;
-            }
-          });
-          
-          setStudents(updatedStudents);
-        }
+        // Refresh the attendance list to show the updated data from the database
+        fetchTodayAttendance();
       } else {
-        throw new Error(response.data?.message || 'Failed to save attendance');
+        setSaveError(response.data.message || 'Failed to save attendance');
       }
     } catch (error) {
       console.error('Save attendance error:', error);
-      console.log('Error details:', error.response?.data || error.message);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to save attendance. Please try again.';
-      setSaveError(errorMessage);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.message);
+      
+      setSaveError(error.response?.data?.message || 'Failed to save attendance. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -557,7 +570,7 @@ const AttendanceManager = () => {
       console.log(`Deleting all students from course: ${courseId}`);
       
       // Make API request to delete all students from the course
-      const response = await axios.delete(
+      const response = await api.delete(
         `${API_ENDPOINTS.GET_COURSES}/${courseId}/students`,
         {
           headers: {
@@ -652,8 +665,13 @@ const AttendanceManager = () => {
           (item[columnMappings.discipline]?.toString().trim() || 'Not Specified') : 
           'Not Specified';
         
+        // Generate a unique ID string that will be compatible with MongoDB ObjectId
+        // This will be replaced by the backend with a real MongoDB ID when saved
+        // We prefix with 'TEMP_' to identify temporary IDs
+        const id = `TEMP_${Date.now()}_${index}`;
+        
         return {
-          id: index + 1, // Just use the index as ID
+          id: id, // Use the generated ID string instead of just an index
           name: name,
           rollNumber: rollNumber,
           discipline: discipline,

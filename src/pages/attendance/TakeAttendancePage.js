@@ -6,6 +6,7 @@ import { BarChart } from '../../components/charts';
 import '../../styles/DashboardPage.css';
 
 const TakeAttendancePage = () => {
+  
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

@@ -4,8 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../config/api';
-import axios from 'axios';
 import '../../styles/DashboardPage.css';
+import WarningIcon from '@mui/icons-material/Warning';
+import EmailIcon from '@mui/icons-material/Email';
 
 /**
  * Faculty Dashboard Component
@@ -20,7 +21,8 @@ const FacultyDashboard = () => {
     totalStudents: 0,
     averageAttendance: 0,
     recentActivity: [],
-    coursesList: [] 
+    coursesList: [],
+    facultyName: 'Faculty Member'
   });
   const [error, setError] = useState(null);
   
@@ -32,10 +34,8 @@ const FacultyDashboard = () => {
         
         console.log('Fetching faculty dashboard data');
         
-        // The token is automatically sent via cookie
-        const response = await axios.get(API_ENDPOINTS.GET_FACULTY_DASHBOARD, {
-          withCredentials: true
-        });
+        // Use the configured api instance
+        const response = await api.get(API_ENDPOINTS.GET_FACULTY_DASHBOARD);
         
         console.log('Dashboard API response:', response.data);
         
@@ -48,94 +48,16 @@ const FacultyDashboard = () => {
             totalStudents: response.data.data.totalStudents || 0,
             averageAttendance: response.data.data.averageAttendance || 0,
             recentActivity: response.data.data.recentActivity || [],
-            coursesList: response.data.data.coursesList || []
+            coursesList: response.data.data.coursesList || [],
+            facultyName: user?.name || 'Faculty Member'
           });
-          console.log('Dashboard data updated with courses:', response.data.data.coursesList || []);
         } else {
-          console.error('Failed to fetch dashboard data:', response.data);
-          setError('Failed to load dashboard data. Please try again later.');
-          // Use mock data as fallback
-          const mockCourses = [
-            { id: '1', name: 'Advanced Mathematics' },
-            { id: '2', name: 'Physics 101' },
-            { id: '3', name: 'Chemistry Lab' },
-            { id: '4', name: 'Computer Science Fundamentals' },
-            { id: '5', name: 'Data Structures and Algorithms' }
-          ];
-          console.log('Using fallback mock data with courses:', mockCourses);
-          
-          setDashboardData({
-            activeCourses: 5,
-            totalStudents: 150,
-            averageAttendance: 92,
-            recentActivity: [
-              {
-                id: '1',
-                date: '2024-03-15',
-                course: 'Advanced Mathematics',
-                studentsPresent: '45/50',
-                attendanceRate: 90
-              },
-              {
-                id: '2',
-                date: '2024-03-14',
-                course: 'Physics 101',
-                studentsPresent: '48/50',
-                attendanceRate: 96
-              },
-              {
-                id: '3',
-                date: '2024-03-13',
-                course: 'Chemistry Lab',
-                studentsPresent: '42/50',
-                attendanceRate: 84
-              }
-            ],
-            coursesList: mockCourses
-          });
+          console.error('Invalid response format:', response.data);
+          setError('Failed to load dashboard data. Please try again.');
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        setError(`Failed to load dashboard data: ${error.message}`);
-        // Use mock data as fallback
-        const mockCourses = [
-          { id: '1', name: 'Advanced Mathematics' },
-          { id: '2', name: 'Physics 101' },
-          { id: '3', name: 'Chemistry Lab' },
-          { id: '4', name: 'Computer Science Fundamentals' },
-          { id: '5', name: 'Data Structures and Algorithms' }
-        ];
-        console.log('Using fallback mock data with courses:', mockCourses);
-        
-        setDashboardData({
-          activeCourses: 5,
-          totalStudents: 150,
-          averageAttendance: 92,
-          recentActivity: [
-            {
-              id: '1',
-              date: '2024-03-15',
-              course: 'Advanced Mathematics',
-              studentsPresent: '45/50',
-              attendanceRate: 90
-            },
-            {
-              id: '2',
-              date: '2024-03-14',
-              course: 'Physics 101',
-              studentsPresent: '48/50',
-              attendanceRate: 96
-            },
-            {
-              id: '3',
-              date: '2024-03-13',
-              course: 'Chemistry Lab',
-              studentsPresent: '42/50',
-              attendanceRate: 84
-            }
-          ],
-          coursesList: mockCourses
-        });
+        setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -144,10 +66,9 @@ const FacultyDashboard = () => {
     if (isAuthenticated) {
       fetchDashboardData();
     } else {
-      console.log('User is not authenticated');
-      setLoading(false);
+      navigate('/login');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate, user?.name]);
 
   const handleTakeAttendance = () => {
     navigate('/faculty/attendance');
@@ -155,12 +76,36 @@ const FacultyDashboard = () => {
 
   const viewAttendanceHistory = (activityId) => {
     console.log('Viewing attendance details for activity:', activityId);
+    
+    // Find the activity data by ID
+    const activity = dashboardData.recentActivity.find(act => act.id === activityId);
+    
+    if (activity) {
+      // Store the selected activity data in session storage
+      try {
+        sessionStorage.setItem('selectedActivity', JSON.stringify(activity));
+        console.log('Stored activity in session storage:', activity);
+      } catch (error) {
+        console.error('Error storing activity data:', error);
+      }
+    }
+    
     // Navigate to the attendance detail page with the activity ID
     navigate(`/faculty/attendance/${activityId}`);
   };
   
   const handleViewReports = () => {
     navigate('/reports/attendance');
+  };
+
+  const viewLowAttendance = (courseId) => {
+    console.log('Viewing low attendance for course:', courseId);
+    navigate(`/faculty/low-attendance/${courseId}`);
+  };
+
+  const handleViewAllStudents = () => {
+    console.log('Viewing all students');
+    navigate('/faculty/students');
   };
 
   return (
@@ -173,6 +118,9 @@ const FacultyDashboard = () => {
                 Faculty Dashboard
               </Typography>
               <Typography variant="subtitle1" color="text.secondary">
+                Welcome, {user?.roleData?.fullName || user?.name || 'Faculty Member'}
+              </Typography>
+              <Typography variant="subtitle2" color="text.secondary">
                 Manage your courses and student attendance
               </Typography>
             </div>
@@ -181,6 +129,7 @@ const FacultyDashboard = () => {
                 variant="outlined" 
                 color="primary" 
                 onClick={handleViewReports}
+                disabled={dashboardData.activeCourses === 0}
               >
                 Attendance Reports
               </Button>
@@ -188,6 +137,7 @@ const FacultyDashboard = () => {
                 variant="contained" 
                 color="primary" 
                 onClick={handleTakeAttendance}
+                disabled={dashboardData.activeCourses === 0}
               >
                 Take Attendance
               </Button>
@@ -203,6 +153,19 @@ const FacultyDashboard = () => {
               <Typography variant="h6">{error}</Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 Using mock data instead
+              </Typography>
+            </Box>
+          ) : dashboardData.activeCourses === 0 ? (
+            <Box sx={{ textAlign: 'center', my: 4, p: 4, bgcolor: 'background.paper', borderRadius: 2 }}>
+              <WarningIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
+              <Typography variant="h5" gutterBottom>
+                No Courses Assigned
+              </Typography>
+              <Typography variant="body1" color="text.secondary" paragraph>
+                {dashboardData.message || 'You currently don\'t have any courses assigned to you.'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Please contact your administrator to get courses assigned to your account.
               </Typography>
             </Box>
           ) : (
@@ -234,9 +197,18 @@ const FacultyDashboard = () => {
                     <Typography variant="h3" color="primary">
                       {dashboardData.totalStudents}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       Total students
                     </Typography>
+                    <Button 
+                      variant="outlined"
+                      size="small"
+                      onClick={handleViewAllStudents}
+                      disabled={dashboardData.totalStudents === 0}
+                      fullWidth
+                    >
+                      View All Students
+                    </Button>
                   </Box>
                 </Paper>
               </Grid>
@@ -258,35 +230,66 @@ const FacultyDashboard = () => {
                 </Paper>
               </Grid>
 
-              {/* Courses List */}
-              <Grid item xs={12} md={6}>
+              {/* Courses Section */}
+              <Grid item xs={12}>
                 <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
+                  <Box sx={{ p: 3 }}>
                     <Typography variant="h6" gutterBottom>
-                      Your Courses
+                      Courses
                     </Typography>
-                    <Box sx={{ overflowY: 'auto', maxHeight: '200px' }}>
-                      {dashboardData.coursesList.length > 0 ? (
-                        <ul className="courses-list">
-                          {dashboardData.coursesList.map((course) => (
-                            <li key={course.id} className="course-item">
-                              <span className="course-name">{course.name}</span>
-                              <Button 
-                                variant="outlined" 
-                                size="small"
-                                onClick={() => navigate(`/faculty/attendance?courseId=${course.id}`)}
-                              >
-                                Take Attendance
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                      {dashboardData.coursesList.length === 0 ? (
+                        <Grid item xs={12}>
+                          <Typography variant="body2" color="text.secondary">
+                            No courses assigned yet.
+                          </Typography>
+                        </Grid>
                       ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                          No courses found
-                        </Typography>
+                        dashboardData.coursesList.map((course) => (
+                          <Grid item xs={12} sm={6} md={4} key={course.id}>
+                            <Paper
+                              elevation={2}
+                              sx={{
+                                p: 2,
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                borderRadius: 2,
+                                '&:hover': {
+                                  boxShadow: 4,
+                                },
+                              }}
+                            >
+                              <Box sx={{ mb: 1 }}>
+                                <Typography variant="h6">{course.name}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {course.code}
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ mt: 'auto', display: 'flex', gap: 1, pt: 1 }}>
+                                <Button 
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => navigate(`/faculty/attendance?courseId=${course.id}`)}
+                                >
+                                  Take Attendance
+                                </Button>
+                                <Button 
+                                  variant="outlined"
+                                  size="small"
+                                  color="secondary"
+                                  startIcon={<WarningIcon />}
+                                  onClick={() => viewLowAttendance(course.id)}
+                                >
+                                  Low Attendance
+                                </Button>
+                              </Box>
+                            </Paper>
+                          </Grid>
+                        ))
                       )}
-                    </Box>
+                    </Grid>
                   </Box>
                 </Paper>
               </Grid>

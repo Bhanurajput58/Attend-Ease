@@ -112,6 +112,24 @@ const StudentDetailPage = () => {
           });
           
           if (response.data && response.data.success) {
+            // Fetch the full name if not already included
+            if (!response.data.data.fullName) {
+              try {
+                const nameResponse = await axios.get(`${API_ENDPOINTS.GET_USER_NAME(id)}`, {
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  withCredentials: true
+                });
+                
+                if (nameResponse.data && nameResponse.data.success) {
+                  response.data.data.fullName = nameResponse.data.name;
+                }
+              } catch (nameError) {
+                console.error('Error fetching name:', nameError);
+              }
+            }
+            
             setStudentData(response.data.data);
             setLoading(false);
             return;
@@ -195,7 +213,7 @@ const StudentDetailPage = () => {
       <div className="page-header">
         <div className="page-title-section">
           <h1 className="page-title">Student Profile</h1>
-          <p className="page-subtitle">{studentData.name} ({studentData.rollNumber})</p>
+          <p className="page-subtitle">{studentData.fullName || studentData.name} ({studentData.rollNumber})</p>
         </div>
         
         <div className="page-actions">

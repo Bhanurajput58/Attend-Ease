@@ -8,18 +8,20 @@ import Unauthorized from './pages/Unauthorized';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { RoleRequired } from './components/RoleBasedAccess';
-import ApiStatus from './components/ApiStatus';
 import { ReportsPage, ReportDetail, AttendanceReportsPage } from './pages/reports';
 import { CourseListPage, CourseDetailPage } from './pages/courses';
 import { AttendanceListPage, TakeAttendancePage, AttendanceDetailPage, SessionDetailPage } from './pages/attendance';
 import { ProfilePage, StatsPage } from './pages/profile';
 import StudentDetailPage from './pages/students/StudentDetailPage';
+import StudentsListPage from './pages/faculty/StudentsListPage';
 
 // Import role-specific pages
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentAttendance from './pages/student/StudentAttendance';
+import CourseAttendanceDetail from './pages/student/CourseAttendanceDetail';
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
 import AttendanceManager from './pages/faculty/AttendanceManager';
+import LowAttendanceManager from './pages/faculty/LowAttendanceManager';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import EnhancedAdminDashboard from './pages/admin/EnhancedAdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
@@ -51,6 +53,28 @@ const App = () => {
                 <StudentDashboard />
               </RoleRequired>
             } />
+            
+            {/* New route for student dashboard with studentId parameter */}
+            <Route path="/student-dashboard/:studentId" element={
+              <RoleRequired roles={FACULTY_ADMIN_ROLES}>
+                <StudentDashboard />
+              </RoleRequired>
+            } />
+            
+            {/* Also define a base route for the student dashboard */}
+            <Route path="/student-dashboard" element={
+              <RoleRequired roles={FACULTY_ADMIN_ROLES}>
+                <StudentDashboard />
+              </RoleRequired>
+            } />
+            
+            {/* Route for course attendance details */}
+            <Route path="/course-attendance/:courseId" element={
+              <RoleRequired roles={ALL_ROLES}>
+                <CourseAttendanceDetail />
+              </RoleRequired>
+            } />
+            
             <Route path="/student/attendance" element={
               <RoleRequired roles={['student']}>
                 <StudentAttendance />
@@ -76,6 +100,16 @@ const App = () => {
             <Route path="/faculty/attendance/:id" element={
               <RoleRequired roles={['faculty']}>
                 <AttendanceDetailPage />
+              </RoleRequired>
+            } />
+            <Route path="/faculty/low-attendance/:courseId" element={
+              <RoleRequired roles={['faculty']}>
+                <LowAttendanceManager />
+              </RoleRequired>
+            } />
+            <Route path="/faculty/students" element={
+              <RoleRequired roles={FACULTY_ADMIN_ROLES}>
+                <StudentsListPage />
               </RoleRequired>
             } />
 
@@ -170,7 +204,6 @@ const App = () => {
         {/* Fallback route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <ApiStatus />
     </>
   );
 };

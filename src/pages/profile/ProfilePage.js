@@ -66,9 +66,12 @@ const ProfilePage = () => {
 
   useEffect(() => {
     // Set basic profile data
-    setProfileData(basicProfileData);
+    setProfileData({
+      ...basicProfileData,
+      name: user?.roleData?.fullName || user?.name || basicProfileData.name
+    });
     setFormData({
-      name: basicProfileData.name,
+      name: user?.roleData?.fullName || user?.name || basicProfileData.name,
       email: basicProfileData.email,
       phone: basicProfileData.phone,
       department: basicProfileData.department,
@@ -184,13 +187,12 @@ const ProfilePage = () => {
           <div className="profile-image-container">
             <img
               src={profileData.profileImage || 'https://via.placeholder.com/150'}
-              alt={profileData.name}
               className="profile-image"
             />
             {editing && (
               <div className="image-upload-controls">
                 <label htmlFor="profileImage">Change Image</label>
-                <input
+                <input 
                   type="text"
                   id="profileImage"
                   name="profileImage"
@@ -202,11 +204,10 @@ const ProfilePage = () => {
               </div>
             )}
           </div>
-
+          
           <div className="profile-meta">
-            <div className="profile-id"><FaIdCard style={{ marginRight: '8px' }} /> ID: {profileData.id}</div>
             <div className={`profile-role ${profileData.role}`}>{profileData.role}</div>
-            <div className="profile-join-date"><FaCalendarAlt style={{ marginRight: '8px' }} /> Joined: {new Date(profileData.joinDate).toLocaleDateString()}</div>
+            <div className="profile-id"><FaIdCard style={{ marginRight: '8px' }} /> ID: {profileData.id}</div>
           </div>
         </div>
 
@@ -214,7 +215,7 @@ const ProfilePage = () => {
           {editing ? (
             <form onSubmit={handleSubmit} className="profile-edit-form">
               <div className="form-section">
-                <h3>Personal Informa</h3>
+                <h3>Personal Information</h3>
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="name"><FaUser style={{ marginRight: '6px' }} />Full Name</label>
@@ -387,18 +388,12 @@ const ProfilePage = () => {
                 <div className="detail-section">
                   <h3>Student Information</h3>
                   <div className="detail-grid">
-                    <div className="detail-item">
-                      <span className="detail-label"><FaCalendarAlt style={{ marginRight: '6px' }} />Enrollment Date</span>
-                      <span className="detail-value">{profileData.enrollmentDate || 'Not set'}</span>
-                    </div>
+                    
                     <div className="detail-item">
                       <span className="detail-label"><FaGraduationCap style={{ marginRight: '6px' }} />Current Semester</span>
                       <span className="detail-value">{profileData.currentSemester || 'Not set'}</span>
                     </div>
-                    <div className="detail-item">
-                      <span className="detail-label"><FaGraduationCap style={{ marginRight: '6px' }} />Major</span>
-                      <span className="detail-value">{profileData.major || 'Not set'}</span>
-                    </div>
+                    
                     <div className="detail-item">
                       <span className="detail-label"><FaGraduationCap style={{ marginRight: '6px' }} />GPA</span>
                       <span className="detail-value">{profileData.gpa || 'Not set'}</span>

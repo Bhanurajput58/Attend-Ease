@@ -341,9 +341,26 @@
 }
 
 .page-subtitle {
-  margin: 0.25rem 0 0 0;
-  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #666;
   font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.course-code {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.separator {
+  color: #999;
+  margin: 0 0.5rem;
+}
+
+.date {
+  color: #666;
 }
 
 .page-actions {

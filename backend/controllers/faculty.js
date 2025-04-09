@@ -11,10 +11,13 @@ exports.getFacultyDashboard = async (req, res) => {
     console.log('Getting dashboard data for faculty:', req.user.id);
     const facultyId = req.user.id;
     
-    // Get faculty's courses count (removing status field since it doesn't exist in schema)
-    const courseQuery = { instructor: facultyId };
-    // Alternative query if faculty field should be used instead of instructor
-    // const courseQuery = { faculty: facultyId };
+    // Get faculty's courses count (checking both instructor and faculty fields)
+    const courseQuery = {
+      $or: [
+        { instructor: facultyId },
+        { faculty: facultyId }
+      ]
+    };
     
     console.log('Querying courses with:', courseQuery);
     const activeCourses = await Course.countDocuments(courseQuery);
@@ -39,7 +42,8 @@ exports.getFacultyDashboard = async (req, res) => {
       totalStudents: 0,
       averageAttendance: 0,
       recentActivity: [],
-      coursesList // Add courses list to response
+      coursesList,
+      message: activeCourses === 0 ? 'No courses assigned yet. Please contact your administrator.' : null
     };
     
     // If faculty has courses, get student count and attendance data
@@ -94,27 +98,6 @@ exports.getFacultyDashboard = async (req, res) => {
           };
         });
         
-        // Get today's scheduled courses (checking if any course doesn't have attendance yet for today)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const courseAttendanceMap = new Map();
-        recentAttendance.forEach(record => {
-          if (record.date >= today) {
-            courseAttendanceMap.set(record.course._id.toString(), true);
-          }
-        });
-        
-        // Find courses without attendance for today
-        const coursesWithoutAttendanceToday = courses.filter(course => 
-          !courseAttendanceMap.has(course._id.toString())
-        );
-        
-        dashboardData.coursesNeedingAttendance = coursesWithoutAttendanceToday.map(course => ({
-          id: course._id,
-          name: course.courseName || course.courseCode
-        }));
-        
         // Calculate average attendance rate across all courses
         let totalAttendanceRate = 0;
         let attendanceCount = 0;
@@ -135,39 +118,6 @@ exports.getFacultyDashboard = async (req, res) => {
           : 0;
           
         console.log('Calculated average attendance rate:', dashboardData.averageAttendance);
-        
-        // Get attendance stats by course
-        dashboardData.courseAttendanceStats = [];
-        for (const courseId of courseIds) {
-          const courseAttendance = await Attendance.find({
-            course: courseId
-          });
-          
-          if (courseAttendance.length > 0) {
-            let totalRate = 0;
-            let recordCount = 0;
-            
-            courseAttendance.forEach(record => {
-              const total = record.students.length;
-              const present = record.students.filter(s => 
-                s.status === 'present' || s.status === 'Present').length;
-              
-              if (total > 0) {
-                totalRate += (present / total) * 100;
-                recordCount++;
-              }
-            });
-            
-            const courseName = courses.find(c => c._id.toString() === courseId.toString())?.courseName || 'Unknown Course';
-            
-            dashboardData.courseAttendanceStats.push({
-              courseId: courseId,
-              courseName: courseName,
-              attendanceRate: recordCount > 0 ? Math.round(totalRate / recordCount) : 0,
-              sessionCount: courseAttendance.length
-            });
-          }
-        }
       } catch (err) {
         console.error('Error processing attendance data:', err);
         dashboardData.averageAttendance = 0;
@@ -182,6 +132,61 @@ exports.getFacultyDashboard = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching faculty dashboard:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get students with low attendance for a course
+// @route   GET /api/faculty/low-attendance/:courseId
+// @access  Private/Faculty
+exports.getLowAttendanceStudents = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { threshold = 75 } = req.query; // Default threshold is 75%
+    
+    // Validate that the course exists and belongs to the faculty
+    const course = await Course.findOne({
+      _id: courseId,
+      instructor: req.user.id
+    });
+    
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found or you do not have permission to access it'
+      });
+    }
+    
+    // Get all attendance records for this course
+    const attendanceRecords = await Attendance.find({ course: courseId });
+    
+    if (attendanceRecords.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          students: [],
+          course
+        }
+      });
+    }
+    
+    // Get all students enrolled in this course
+    const enrolledStudents = await ImportedStudent.find({ courses: courseId })
+      .populate('user', 'name email');
+      
+    return res.status(200).json({
+      success: true,
+      data: {
+        students: enrolledStudents,
+        course
+      }
+    });
+  } catch (error) {
+    console.error('Error getting low attendance students:', error);
     res.status(500).json({
       success: false,
       message: 'Server Error',

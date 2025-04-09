@@ -5,27 +5,6 @@ const API_BASE_URL = 'http://localhost:5000/api';
 // Development mode flag - set to true to use mock data instead of API calls
 export const IS_DEVELOPMENT_MODE = false;
 
-// Set up axios interceptor to handle mock data mode
-if (IS_DEVELOPMENT_MODE) {
-  axios.interceptors.request.use(
-    config => {
-      // Check if the request is to our API
-      if (config.url && config.url.includes(API_BASE_URL)) {
-        // Log the API call that would have been made
-        console.log(`Mock API: ${config.method?.toUpperCase()} ${config.url}`);
-        
-        // Cancel the actual API request and handle it in mock data mode
-        return {
-          ...config,
-          cancelToken: new axios.CancelToken(cancel => cancel('Using mock data mode'))
-        };
-      }
-      return config;
-    },
-    error => Promise.reject(error)
-  );
-}
-
 export const API_ENDPOINTS = {
     // Auth endpoints
     LOGIN: `${API_BASE_URL}/auth/login`,
@@ -36,6 +15,7 @@ export const API_ENDPOINTS = {
     // User endpoints
     GET_USERS: `${API_BASE_URL}/users`,
     GET_USER_BY_ID: (id) => `${API_BASE_URL}/users/${id}`,
+    GET_USER_NAME: (id) => `${API_BASE_URL}/users/${id}/name`,
     UPDATE_USER: (id) => `${API_BASE_URL}/users/${id}`,
     DELETE_USER: (id) => `${API_BASE_URL}/users/${id}`,
     
@@ -45,6 +25,7 @@ export const API_ENDPOINTS = {
     CREATE_COURSE: `${API_BASE_URL}/courses`,
     UPDATE_COURSE: (id) => `${API_BASE_URL}/courses/${id}`,
     DELETE_COURSE: (id) => `${API_BASE_URL}/courses/${id}`,
+    GET_COURSE_STUDENTS: (id) => `${API_BASE_URL}/courses/${id}/students`,
     
     // Attendance endpoints
     GET_ATTENDANCE: `${API_BASE_URL}/attendance`,
@@ -57,11 +38,14 @@ export const API_ENDPOINTS = {
     // Student endpoints
     GET_STUDENT_DASHBOARD: `${API_BASE_URL}/student/dashboard`,
     GET_STUDENT_ATTENDANCE: `${API_BASE_URL}/student/attendance`,
+    GET_STUDENTS_BY_COURSE: (courseId) => `${API_BASE_URL}/students/course/${courseId}`,
+    GET_STUDENT_BY_ID: (id) => `${API_BASE_URL}/students/${id}`,
     
     // Faculty endpoints
     GET_FACULTY_DASHBOARD: `${API_BASE_URL}/faculty/dashboard`,
     GET_FACULTY_COURSES: `${API_BASE_URL}/faculty/courses`,
     TAKE_ATTENDANCE: `${API_BASE_URL}/faculty/attendance`,
+    GET_LOW_ATTENDANCE: `${API_BASE_URL}/faculty/low-attendance`,
     
     // Admin endpoints
     GET_ADMIN_DASHBOARD: `${API_BASE_URL}/admin/dashboard`,

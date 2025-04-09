@@ -20,7 +20,7 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const [usersResponse, coursesResponse] = await Promise.all([
-        axios.get(API_ENDPOINTS.GET_USERS, { withCredentials: true }),
+        axios.get(API_ENDPOINTS.GET_ALL_USERS, { withCredentials: true }),
         axios.get(API_ENDPOINTS.GET_COURSES, { withCredentials: true })
       ]);
 

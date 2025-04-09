@@ -1,5 +1,8 @@
 const express = require('express');
-const { getFacultyDashboard } = require('../controllers/faculty');
+const { 
+  getFacultyDashboard,
+  getLowAttendanceStudents
+} = require('../controllers/faculty');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -22,5 +25,9 @@ router.use('/dashboard', (req, res, next) => {
 // Dashboard route
 router.route('/dashboard')
   .get(getFacultyDashboard);
+
+// Get students with low attendance for a specific course
+router.route('/low-attendance/:courseId')
+  .get(getLowAttendanceStudents);
 
 module.exports = router; 

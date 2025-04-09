@@ -97,33 +97,79 @@ exports.createAttendance = async (req, res) => {
         let studentModel = 'ImportedStudent'; // Default to ImportedStudent model
         let studentObject = null;
         
-        // Get roll number, name and discipline from student data
-        const rollNumber = studentData.rollNumber || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-        const name = studentData.name || 'Unknown';
-        const discipline = studentData.discipline || 'Not Specified';
+        // Get student data from request
+        const rollNumber = studentData.rollNumber || studentData.studentData?.rollNumber || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+        const name = studentData.name || studentData.studentData?.name || 'Unknown';
+        const discipline = studentData.discipline || studentData.studentData?.discipline || 'Not Specified';
+        const program = studentData.program || studentData.studentData?.program || 'B.tech';
+        const semester = studentData.semester || studentData.studentData?.semester || 4;
         
-        console.log(`Processing student: ${name}, ${rollNumber}, ${discipline}`);
+        console.log(`Processing student: ${name}, ${rollNumber}, ${discipline}, program: ${program}, semester: ${semester}`);
         
-        // Try to find existing student by roll number first
-        let existingStudent = await ImportedStudent.findOne({ rollNumber });
+        // Try to find existing student by roll number or ID first
+        let existingStudent = null;
+        
+        // If student ID is provided and not a temporary ID, find by ID
+        if (studentData.student && typeof studentData.student === 'string' && !studentData.student.startsWith('TEMP_')) {
+          try {
+            existingStudent = await ImportedStudent.findById(studentData.student);
+            console.log(`Looking up by ID: ${studentData.student}, found:`, existingStudent ? 'Yes' : 'No');
+          } catch (e) {
+            console.error(`Error finding student by ID:`, e);
+          }
+        }
+        
+        // If not found by ID, try by roll number
+        if (!existingStudent) {
+          existingStudent = await ImportedStudent.findOne({ rollNumber });
+          console.log(`Looking up by roll number: ${rollNumber}, found:`, existingStudent ? 'Yes' : 'No');
+        }
         
         if (existingStudent) {
-          console.log(`Found existing student with roll number: ${rollNumber}, ID: ${existingStudent._id}`);
+          console.log(`Found existing student: ${existingStudent._id}, rollNumber: ${existingStudent.rollNumber}`);
           studentId = existingStudent._id;
           
-          // Update student data if needed (only if better data is provided)
+          // Always update student data to ensure we have the latest information
           let needsUpdate = false;
           
+          // Update name if it's not Unknown and current name is generic or not provided
           if (name && name !== 'Unknown' && 
               (existingStudent.name === 'Unknown' || existingStudent.name === 'Student')) {
             existingStudent.name = name;
             needsUpdate = true;
+            console.log(`Updating name to ${name}`);
           }
           
+          // Update discipline if provided and current discipline is generic
           if (discipline && discipline !== 'Not Specified' && 
               existingStudent.discipline === 'Not Specified') {
             existingStudent.discipline = discipline;
             needsUpdate = true;
+            console.log(`Updating discipline to ${discipline}`);
+          }
+          
+          // Update program if provided and current program is generic
+          if (program && program !== 'B.tech' && 
+              existingStudent.program === 'B.tech') {
+            existingStudent.program = program;
+            needsUpdate = true;
+            console.log(`Updating program to ${program}`);
+          }
+          
+          // Update semester if provided and current semester is generic
+          if (semester && semester !== 4 && 
+              existingStudent.semester === 4) {
+            existingStudent.semester = semester;
+            needsUpdate = true;
+            console.log(`Updating semester to ${semester}`);
+          }
+          
+          // If current rollNumber is AUTO-generated and we have a real one now, update it
+          if (existingStudent.rollNumber.startsWith('AUTO-') && 
+              rollNumber && !rollNumber.startsWith('AUTO-')) {
+            existingStudent.rollNumber = rollNumber;
+            needsUpdate = true;
+            console.log(`Updating AUTO roll number to ${rollNumber}`);
           }
           
           if (!existingStudent.courses.includes(course)) {
@@ -138,11 +184,13 @@ exports.createAttendance = async (req, res) => {
           
           studentObject = existingStudent;
         } else {
-          // Create a new student record
+          // Create a new student record with all provided information
           const newStudent = await ImportedStudent.create({
             name,
             rollNumber,
             discipline,
+            program,
+            semester,
             courses: [course]
           });
           
@@ -161,14 +209,17 @@ exports.createAttendance = async (req, res) => {
         
         studentRecords.push(studentRecord);
         
-        // Add student to student responses for API response
+        // Add student to student responses for API response with all details
         studentResponses.push({
           student: studentId,
           studentModel,
           name: studentObject.name,
           rollNumber: studentObject.rollNumber,
           discipline: studentObject.discipline,
-          status: studentRecord.status
+          program: studentObject.program,
+          semester: studentObject.semester,
+          status: studentRecord.status,
+          remarks: studentRecord.remarks || ''
         });
         
         // Update attendance stats
@@ -208,7 +259,7 @@ exports.createAttendance = async (req, res) => {
       .populate('course', 'courseName courseCode')
       .populate({
         path: 'students.student',
-        select: 'name rollNumber discipline'
+        select: 'name rollNumber discipline program semester'
       });
     
     // Return success response
@@ -283,7 +334,13 @@ exports.getCourseAttendance = async (req, res) => {
             discipline: studentEntry.student.discipline || 'Not Specified'
           };
         }
-        return studentEntry;
+        return {
+          ...studentEntry,
+          // Add default values for unpopulated references
+          name: 'Unknown',
+          rollNumber: 'Unknown',
+          discipline: 'Not Specified'
+        };
       });
       
       return plainRecord;
@@ -358,26 +415,59 @@ exports.updateAttendance = async (req, res) => {
     
     // Update student records if needed
     if (req.body.students && Array.isArray(req.body.students)) {
-      // Identify and update AUTO-generated student records
+      // Process all student records to ensure data is up-to-date
       for (const studentRecord of req.body.students) {
         const studentId = studentRecord.student;
         
         try {
-          // First check if this student exists and has an AUTO roll number
+          // Find the student in the database
           const student = await ImportedStudent.findById(studentId);
           
-          if (student && student.rollNumber && student.rollNumber.startsWith('AUTO-')) {
-            // If student has real details now, update them
-            if (studentRecord.name && studentRecord.name !== 'Student') {
+          if (student) {
+            let needsUpdate = false;
+            
+            // Update student information if better data is available
+            if (studentRecord.name && studentRecord.name !== 'Unknown' && 
+                (student.name === 'Unknown' || student.name === 'Student')) {
               student.name = studentRecord.name;
+              needsUpdate = true;
+              console.log(`Updated student name to ${studentRecord.name}`);
             }
             
-            if (studentRecord.rollNumber && !studentRecord.rollNumber.startsWith('AUTO-')) {
+            // Update roll number if current one is auto-generated
+            if (studentRecord.rollNumber && !studentRecord.rollNumber.startsWith('AUTO-') && 
+                student.rollNumber.startsWith('AUTO-')) {
               student.rollNumber = studentRecord.rollNumber;
+              needsUpdate = true;
+              console.log(`Updated student roll number to ${studentRecord.rollNumber}`);
+            }
+            
+            // Update discipline if available and current one is generic
+            if (studentRecord.discipline && studentRecord.discipline !== 'Not Specified' && 
+                student.discipline === 'Not Specified') {
+              student.discipline = studentRecord.discipline;
+              needsUpdate = true;
+              console.log(`Updated student discipline to ${studentRecord.discipline}`);
+            }
+            
+            // Update program if available and current one is generic
+            if (studentRecord.program && studentRecord.program !== 'B.tech' && 
+                student.program === 'B.tech') {
+              student.program = studentRecord.program;
+              needsUpdate = true;
+              console.log(`Updated student program to ${studentRecord.program}`);
+            }
+            
+            // Update semester if available and current one is generic
+            if (studentRecord.semester && studentRecord.semester !== 4 && 
+                student.semester === 4) {
+              student.semester = studentRecord.semester;
+              needsUpdate = true;
+              console.log(`Updated student semester to ${studentRecord.semester}`);
             }
             
             // Save if changes were made
-            if (student.isModified()) {
+            if (needsUpdate) {
               await student.save();
               console.log(`Updated student ${studentId} with real info`);
             }
@@ -411,37 +501,18 @@ exports.updateAttendance = async (req, res) => {
         const newStatus = studentRecord.status;
         const oldStatus = previousStatuses[studentId];
         
-        // Only update stats if status changed
-        if (oldStatus && newStatus && oldStatus !== newStatus) {
-          try {
-            // Decrement old status count, increment new status count
-            await ImportedStudent.findByIdAndUpdate(
-              studentId,
-              {
-                $inc: {
-                  [`attendanceStats.$[elem].${oldStatus}`]: -1,
-                  [`attendanceStats.$[elem].${newStatus}`]: 1
-                }
-              },
-              {
-                arrayFilters: [{ "elem.course": attendance.course }]
-              }
-            );
-            
-            // Also update percentage
-            const student = await ImportedStudent.findById(studentId);
-            if (student) {
-              const stats = student.attendanceStats.find(
-                stat => stat.course.toString() === attendance.course.toString()
-              );
-              if (stats) {
-                stats.percentage = (stats.present / stats.total) * 100;
-                await student.save();
-              }
-            }
-          } catch (error) {
-            console.error('Error updating attendance stats:', error);
-          }
+        try {
+          // Update attendance stats directly using the model's method
+          // This ensures courses array is also updated properly
+          await ImportedStudent.updateAttendanceStats(
+            studentId,
+            attendance.course,
+            newStatus
+          );
+          
+          console.log(`Updated attendance stats for student ${studentId} with status ${newStatus} for course ${attendance.course}`);
+        } catch (error) {
+          console.error('Error updating attendance stats:', error);
         }
       }
     }
@@ -535,12 +606,18 @@ exports.getAttendance = async (req, res) => {
           return {
             ...studentEntry,
             // Add these fields directly on the student record for easy access
-            name: studentEntry.student.name,
-            rollNumber: studentEntry.student.rollNumber,
+            name: studentEntry.student.name || 'Unknown',
+            rollNumber: studentEntry.student.rollNumber || 'Unknown',
             discipline: studentEntry.student.discipline || 'Not Specified'
           };
         }
-        return studentEntry;
+        return {
+          ...studentEntry,
+          // Add default values for unpopulated references
+          name: 'Unknown',
+          rollNumber: 'Unknown',
+          discipline: 'Not Specified'
+        };
       });
       
       return plainRecord;
