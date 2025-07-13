@@ -1,3 +1,10 @@
+/* App Container */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 /* General Styles */
 :root {
   --primary-color: #3b82f6;
@@ -37,6 +44,19 @@ body {
   line-height: 1.6;
 }
 
+/* Responsive padding for different screen sizes */
+@media (max-width: 900px) {
+  body {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding-top: 0;
+  }
+}
+
 a {
   color: var(--primary-color);
   text-decoration: none;
@@ -68,13 +88,6 @@ p {
 ul, ol {
   margin-left: 2rem;
   margin-bottom: 1rem;
-}
-
-/* App Container */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
 }
 
 /* Header Styles */

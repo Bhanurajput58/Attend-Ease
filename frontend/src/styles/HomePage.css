@@ -3,7 +3,6 @@
   line-height: 1.6;
   color: #333;
   overflow-x: hidden;
-  padding-top: 50px;
 }
 
 /* Hero Section */
@@ -582,10 +581,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .home-page {
-    padding-top: 70px;
-  }
-  
   .hero-section {
     height: calc(100vh - 70px);
     padding: 0 1rem;
@@ -629,10 +624,6 @@
 }
 
 @media (max-width: 480px) {
-  .home-page {
-    padding-top: 60px;
-  }
-  
   .hero-section {
     height: calc(100vh - 60px);
     padding: 0 0.5rem;
