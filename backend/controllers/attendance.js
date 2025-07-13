@@ -362,32 +362,147 @@ exports.getCourseAttendance = async (req, res) => {
 exports.getStudentAttendance = async (req, res) => {
   try {
     const studentId = req.params.studentId;
+    console.log('Getting attendance for student:', studentId);
     
-    // Students can only access their own attendance
-    if (req.user.role === 'student' && req.user.id !== studentId) {
-      return res.status(403).json({ message: 'Not authorized to view this data' });
+    // First, find the student to get all courses they're enrolled in
+    const ImportedStudent = require('../models/ImportedStudent');
+    const student = await ImportedStudent.findById(studentId);
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
     }
     
-    // Find all attendance records that include this student
+    // Get all courses the student is enrolled in
+    const courses = await Course.find({
+      _id: { $in: student.courses }
+    }).select('_id courseName courseCode faculty instructor');
+    
+    console.log(`Found ${courses.length} courses for student ${studentId}`);
+    
+    // Find attendance records for the student
     const attendanceRecords = await Attendance.find({
       'students.student': studentId
     })
-      .populate('course', 'name code')
-      .populate('faculty', 'name');
+    .populate('course', 'courseName courseCode')
+    .populate('faculty', 'name')
+    .sort({ date: -1 });
     
-    // Get student's attendance summary
-    const student = await ImportedStudent.findById(studentId).select('attendanceStats');
+    // Process stats per course
+    const courseStats = new Map();
+    let totalPresent = 0;
+    let totalClasses = 0;
     
+    // First add all courses the student is enrolled in
+    for (const course of courses) {
+      const courseId = course._id.toString();
+      courseStats.set(courseId, {
+        id: courseId,
+        name: course.courseName || course.courseCode,
+        code: course.courseCode,
+        present: 0,
+        absent: 0,
+        total: 0,
+        faculty: course.faculty?.name || 'N/A'
+      });
+    }
+    
+    // Then update with attendance data
+    attendanceRecords.forEach(record => {
+      const studentEntry = record.students.find(s => s.student.toString() === studentId);
+      if (studentEntry) {
+        const courseId = record.course._id.toString();
+        if (!courseStats.has(courseId)) {
+          courseStats.set(courseId, {
+            id: courseId,
+            name: record.course.courseName || record.course.courseCode,
+            code: record.course.courseCode,
+            present: 0,
+            absent: 0,
+            total: 0,
+            faculty: record.faculty?.name || 'N/A'
+          });
+        }
+        
+        const stats = courseStats.get(courseId);
+        stats.total++;
+        if (studentEntry.status.toLowerCase() === 'present') {
+          stats.present++;
+          totalPresent++;
+        } else {
+          stats.absent++;
+        }
+        totalClasses++;
+      }
+    });
+
+    // Calculate course comparison data and overall stats
+    const courseComparison = Array.from(courseStats.values()).map(stats => ({
+      id: stats.id,
+      name: stats.name,
+      code: stats.code,
+      faculty: stats.faculty,
+      attendance: stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0
+    }));
+
+    // Calculate overall rate
+    const overallRate = totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
+    
+    // Create monthly analytics data
+    const monthlyData = new Map();
+    attendanceRecords.forEach(record => {
+      const month = new Date(record.date).toLocaleString('default', { month: 'short' });
+      if (!monthlyData.has(month)) {
+        monthlyData.set(month, { present: 0, total: 0 });
+      }
+      const data = monthlyData.get(month);
+      const studentEntry = record.students.find(s => s.student.toString() === studentId);
+      if (studentEntry) {
+        data.total++;
+        if (studentEntry.status.toLowerCase() === 'present') {
+          data.present++;
+        }
+      }
+    });
+
+    const monthly = Array.from(monthlyData.entries()).map(([month, data]) => ({
+      month,
+      attendance: data.total > 0 ? Math.round((data.present / data.total) * 100) : 0
+    }));
+
     res.json({
       success: true,
-      count: attendanceRecords.length,
       data: {
-        records: attendanceRecords,
-        stats: student?.attendanceStats || []
+        overall: overallRate,
+        courses: Array.from(courseStats.values()),
+        analytics: {
+          monthly,
+          courseComparison,
+          distribution: [
+            { name: 'Present', value: totalPresent },
+            { name: 'Absent', value: totalClasses - totalPresent }
+          ]
+        },
+        history: attendanceRecords.map(record => {
+          const studentEntry = record.students.find(s => s.student.toString() === studentId);
+          return {
+            date: record.date.toLocaleDateString(),
+            course: record.course.courseName || record.course.courseCode,
+            status: studentEntry?.status || 'absent',
+            remarks: studentEntry?.remarks || ''
+          };
+        })
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    console.error('Error getting student attendance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve attendance records',
+      error: error.message
+    });
   }
 };
 
@@ -1130,7 +1245,6 @@ async function generateExcelReport(records, filePath, startDate, endDate) {
       if (!courseGroups[courseId]) {
         courseGroups[courseId] = {
           name: courseName,
-          id: courseId,
           records: []
         };
       }
@@ -1361,4 +1475,246 @@ async function generateExcelReport(records, filePath, startDate, endDate) {
     console.error('Error generating Excel report:', err);
     throw err;
   }
-} 
+}
+
+// @desc    Get student attendance data for dashboard
+// @route   GET /api/students/:id/attendance
+// @access  Private
+exports.getStudentAttendanceData = async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    console.group('🎯 Student Attendance Data Request');
+    console.log('Student ID:', studentId);
+    console.log('Auth Token:', req.headers.authorization);
+    console.log('User Role:', req.user?.role);
+    console.log('Request Query:', req.query);
+    
+    // Get all attendance records for this student
+    const attendanceRecords = await Attendance.find({
+      'students.student': studentId
+    })
+    .populate('course', 'courseName courseCode faculty')
+    .sort({ date: -1 });
+
+    console.log(`Found ${attendanceRecords.length} attendance records`);
+    if (attendanceRecords.length > 0) {
+      console.log('Sample record:', {
+        date: attendanceRecords[0].date,
+        course: attendanceRecords[0].course?.courseName,
+        studentsCount: attendanceRecords[0].students?.length
+      });
+    }
+
+    // Initialize response data structure
+    const responseData = {
+      overall: 0,
+      courses: [],
+      history: [],
+      analytics: {
+        monthly: [],
+        courseComparison: [],
+        distribution: []
+      }
+    };
+
+    // Process attendance records
+    const courseStats = new Map();
+    let totalPresent = 0;
+    let totalClasses = 0;
+
+    // Calculate per-course statistics
+    attendanceRecords.forEach(record => {
+      const studentEntry = record.students.find(s => s.student.toString() === studentId);
+      if (studentEntry) {
+        const courseId = record.course._id.toString();
+        if (!courseStats.has(courseId)) {
+          courseStats.set(courseId, {
+            id: courseId,
+            name: record.course.courseName || record.course.courseCode,
+            code: record.course.courseCode,
+            present: 0,
+            absent: 0,
+            total: 0,
+            faculty: record.faculty?.name || 'N/A'
+          });
+        }
+        
+        const stats = courseStats.get(courseId);
+        stats.total++;
+        if (studentEntry.status.toLowerCase() === 'present') {
+          stats.present++;
+          totalPresent++;
+        } else {
+          stats.absent++;
+        }
+        totalClasses++;
+      }
+    });
+
+    // Calculate overall attendance rate
+    responseData.overall = totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
+
+    // Format course comparison data
+    responseData.analytics.courseComparison = Array.from(courseStats.values()).map(stats => ({
+      id: stats.id,
+      name: stats.name,
+      code: stats.code,
+      faculty: stats.faculty,
+      attendance: stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0,
+      warning: stats.total > 0 ? (stats.present / stats.total) < 0.75 : false
+    }));
+
+    // Calculate monthly analytics
+    const monthlyData = new Map();
+    attendanceRecords.forEach(record => {
+      const month = new Date(record.date).toLocaleString('default', { month: 'short' });
+      if (!monthlyData.has(month)) {
+        monthlyData.set(month, { present: 0, total: 0 });
+      }
+      const data = monthlyData.get(month);
+      const studentEntry = record.students.find(s => s.student.toString() === studentId);
+      if (studentEntry) {
+        data.total++;
+        if (studentEntry.status.toLowerCase() === 'present') {
+          data.present++;
+        }
+      }
+    });
+
+    // Format monthly data
+    responseData.analytics.monthly = Array.from(monthlyData.entries()).map(([month, data]) => ({
+      month,
+      attendance: data.total > 0 ? Math.round((data.present / data.total) * 100) : 0
+    }));
+
+    // Format attendance distribution
+    responseData.analytics.distribution = [
+      { name: 'Present', value: totalPresent },
+      { name: 'Absent', value: totalClasses - totalPresent }
+    ];
+
+    // Format attendance history
+    responseData.history = attendanceRecords.map(record => {
+      const studentEntry = record.students.find(s => s.student.toString() === studentId);
+      return {
+        date: record.date.toLocaleDateString(),
+        course: record.course.courseName || record.course.courseCode,
+        status: studentEntry?.status || 'absent',
+        remarks: studentEntry?.remarks || ''
+      };
+    });
+
+    console.log('✅ Successfully processed attendance data');
+    console.groupEnd();
+    res.json({
+      success: true,
+      data: responseData
+    });
+  } catch (error) {
+    console.error('❌ Error in getStudentAttendanceData:', {
+      message: error.message,
+      stack: error.stack,
+      studentId: req.params.id
+    });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve attendance records',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get student dashboard data
+// @route   GET /api/attendance/student/:id
+// @access  Private
+exports.getStudentAttendanceData = async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    console.log('Getting dashboard data for student:', studentId);
+
+    // Get all attendance records for this student
+    const attendanceRecords = await Attendance.find({
+      'students.student': studentId
+    })
+    .populate('course', 'courseName courseCode')
+    .sort({ date: -1 });
+
+    // Initialize response data structure
+    const responseData = {
+      overall: 0,
+      courses: [],
+      history: [],
+      analytics: {
+        monthly: [],
+        courseComparison: [],
+        distribution: { present: 0, absent: 0 }
+      }
+    };
+
+    // Process attendance records
+    const courseStats = new Map();
+    let totalPresent = 0;
+    let totalClasses = 0;
+
+    attendanceRecords.forEach(record => {
+      const studentEntry = record.students.find(s => s.student.toString() === studentId);
+      const courseId = record.course._id.toString();
+      
+      if (!courseStats.has(courseId)) {
+        courseStats.set(courseId, {
+          id: courseId,
+          name: record.course.courseName,
+          code: record.course.courseCode,
+          present: 0,
+          total: 0
+        });
+      }
+
+      const stats = courseStats.get(courseId);
+      stats.total++;
+      if (studentEntry && studentEntry.status.toLowerCase() === 'present') {
+        stats.present++;
+        totalPresent++;
+      }
+      totalClasses++;
+    });
+
+    // Calculate overall attendance
+    responseData.overall = totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
+
+    // Process course comparison data
+    responseData.analytics.courseComparison = Array.from(courseStats.values()).map(course => ({
+      id: course.id,
+      name: course.name,
+      code: course.code,
+      attendance: course.total > 0 ? Math.round((course.present / course.total) * 100) : 0
+    }));
+
+    // Process recent attendance history
+    responseData.history = attendanceRecords.slice(0, 10).map(record => ({
+      date: record.date.toISOString().split('T')[0],
+      course: record.course.courseName,
+      status: record.students.find(s => s.student.toString() === studentId)?.status || 'absent'
+    }));
+
+    // Add distribution data
+    responseData.analytics.distribution = [
+      { name: 'Present', value: totalPresent },
+      { name: 'Absent', value: totalClasses - totalPresent }
+    ];
+
+    // Send the response
+    res.json({
+      success: true,
+      data: responseData
+    });
+
+  } catch (error) {
+    console.error('Error getting student dashboard data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve dashboard data',
+      error: error.message
+    });
+  }
+};

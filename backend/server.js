@@ -96,6 +96,8 @@ app.use(logger);
 // Debug middleware to log all requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Request headers:', req.headers);
+  console.log('Request body:', req.body);
   next();
 });
 
@@ -336,10 +338,20 @@ app.use('/api/students', require('./routes/students'));
 app.use('/api/faculty', require('./routes/faculty'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Debug middleware to log all requests
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
+// API Routes with both with and without /api prefix for backwards compatibility
+const authRoutes = require('./routes/auth');
+const attendanceRoutes = require('./routes/attendance');
+const studentsRoutes = require('./routes/students');
+const facultyRoutes = require('./routes/faculty');
+const adminRoutes = require('./routes/admin');
+
+// Mount routes both with and without /api prefix
+['/api', ''].forEach(prefix => {
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/attendance`, attendanceRoutes);
+  app.use(`${prefix}/students`, studentsRoutes);
+  app.use(`${prefix}/faculty`, facultyRoutes);
+  app.use(`${prefix}/admin`, adminRoutes);
 });
 
 // Default route

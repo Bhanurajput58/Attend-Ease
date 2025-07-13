@@ -2,7 +2,8 @@ const express = require('express');
 const {
   importStudents,
   getStudentsByCourse,
-  getStudent
+  getStudent,
+  getStudentTimetable
 } = require('../controllers/studentsImport');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -19,8 +20,12 @@ router.route('/import')
 router.route('/course/:courseId')
   .get(authorize('faculty', 'admin'), getStudentsByCourse);
 
-// Get student by ID or roll number
+// Get student's timetable - must come before generic :identifier route
+router.route('/:studentId/timetable')
+  .get(getStudentTimetable);
+
+// Get student by ID or roll number - must be last as it has a generic parameter
 router.route('/:identifier')
   .get(getStudent);
 
-module.exports = router; 
+module.exports = router;

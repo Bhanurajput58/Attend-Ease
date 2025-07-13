@@ -35,6 +35,20 @@ const courseSchema = new mongoose.Schema({
     required: [true, 'Please add a department'],
     trim: true
   },
+  schedule: {
+    days: [{
+      type: String,
+      enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    }],
+    time: {
+      type: String,
+      default: '09:00 AM - 10:30 AM'
+    },
+    room: {
+      type: String,
+      default: 'TBD'
+    }
+  },
   enrollmentHistory: [{
     students: [{
       type: mongoose.Schema.Types.ObjectId,

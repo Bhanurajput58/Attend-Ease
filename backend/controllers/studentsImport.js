@@ -124,4 +124,85 @@ exports.getStudent = async (req, res) => {
       error: error.message 
     });
   }
-}; 
+};
+
+// @desc    Get student's timetable
+// @route   GET /api/students/:studentId/timetable
+// @access  Private
+exports.getStudentTimetable = async (req, res) => {
+  try {
+    const studentId = req.params.studentId;
+    
+    // Find the student's enrolled courses
+    const student = await ImportedStudent.findById(studentId)
+      .populate({
+        path: 'courses',
+        select: 'courseName courseCode schedule faculty',
+        populate: {
+          path: 'faculty',
+          select: 'name'
+        }
+      });
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+
+    // Transform courses into day-wise timetable
+    const timetable = [
+      { day: 'Monday', courses: [] },
+      { day: 'Tuesday', courses: [] },
+      { day: 'Wednesday', courses: [] },
+      { day: 'Thursday', courses: [] },
+      { day: 'Friday', courses: [] }
+    ];
+
+    // Map courses to their respective days
+    student.courses.forEach(course => {
+      const courseInfo = {
+        id: course._id,
+        name: course.courseName,
+        code: course.courseCode,
+        faculty: course.faculty?.name || 'TBD',
+        time: course.schedule?.time || '09:00 AM - 10:30 AM',
+        room: course.schedule?.room || 'TBD'
+      };
+
+      if (course.schedule?.days && Array.isArray(course.schedule.days)) {
+        course.schedule.days.forEach(day => {
+          const dayEntry = timetable.find(d => d.day === day);
+          if (dayEntry) {
+            dayEntry.courses.push(courseInfo);
+          }
+        });
+      } else {
+        // If no schedule is specified, add to Monday by default
+        timetable[0].courses.push(courseInfo);
+      }
+    });
+
+    // Sort courses within each day by time
+    timetable.forEach(day => {
+      day.courses.sort((a, b) => {
+        const timeA = a.time.split(' - ')[0];
+        const timeB = b.time.split(' - ')[0];
+        return timeA.localeCompare(timeB);
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      data: timetable
+    });
+  } catch (error) {
+    console.error('Error getting student timetable:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message
+    });
+  }
+};

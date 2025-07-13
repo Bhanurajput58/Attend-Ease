@@ -17,79 +17,35 @@ exports.protect = async (req, res, next) => {
   } 
   // Then fall back to header authorization if needed (for API clients)
   else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    // Extract token from header
     token = req.headers.authorization.split(' ')[1];
-    console.log('Token found in header:', token?.substring(0, 10) + '...');
-  } else {
-    console.log('No token found in cookies or Authorization header');
+    console.log('Token found in Authorization header');
   }
   
   // If no token found, return error
   if (!token) {
-    console.log('No token found, access denied');
-    return res.status(401).json({ 
+    console.log('No token found in cookies or Authorization header');
+    return res.status(401).json({
       success: false,
-      message: 'Access denied. No token provided.' 
+      message: 'Not authorized to access this route'
     });
   }
-  
+
   try {
-    // Verify the token
-    console.log('Verifying token...');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Find the user by ID from the decoded token
-    console.log('Looking for user with ID:', decoded.id);
-    
-    // Try to find in User collection
-    const user = await User.findById(decoded.id);
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'attend_ease_secret_key_2609');
+    console.log('Token decoded successfully:', decoded);
+
+    // Get user from token
+    const user = await User.findById(decoded.id).select('-password');
     
     if (!user) {
-      console.log('User not found in User collection');
-      
-      // Development fallback: If we're in development and user is not found,
-      // create a temporary user object based on the token
-      if (process.env.NODE_ENV === 'development' || true) {
-        console.log('Creating temporary user object from token for development');
-        req.user = {
-          id: decoded.id,
-          _id: decoded.id,
-          name: 'Faculty User',
-          email: 'faculty@example.com',
-          role: decoded.role || 'faculty'
-        };
-        return next();
-      }
-      
-      // If user is not found, check ImportedStudent collection as a fallback
-      try {
-        const ImportedStudent = require('../models/ImportedStudent');
-        const student = await ImportedStudent.findById(decoded.id);
-        
-        if (student) {
-          // Created a simplified user object from imported student
-          req.user = {
-            id: student._id,
-            _id: student._id,
-            name: student.name,
-            role: 'student',
-            email: student.rollNumber + '@temp.edu'
-          };
-          console.log('User found in ImportedStudent collection:', req.user.name);
-          return next();
-        }
-      } catch (err) {
-        console.error('Error checking ImportedStudent collection:', err);
-      }
-      
-      // No user found in any collection
-      console.error('User not found in any collection despite valid token');
-      return res.status(401).json({ 
+      console.log('No user found with token ID');
+      return res.status(401).json({
         success: false,
-        message: 'Invalid token. User not found.' 
+        message: 'User not found'
       });
     }
-    
+
     // Set user object in the request for use in protected routes
     req.user = user;
     console.log('Authentication successful for user:', user.name);
@@ -122,4 +78,4 @@ exports.authorize = (...roles) => {
     
     next();
   };
-}; 
+};

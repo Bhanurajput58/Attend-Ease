@@ -6,7 +6,8 @@ const {
   updateAttendance,
   getAttendance,
   deleteAttendance,
-  getAttendanceById
+  getAttendanceById,
+  getStudentAttendanceData
 } = require('../controllers/attendance');
 const { protect, authorize } = require('../middleware/auth');
 const fs = require('fs-extra');
@@ -252,10 +253,14 @@ router.route('/course/:courseId')
 router.route('/student/:studentId')
   .get(getStudentAttendance);
 
+// Add this new route for student dashboard data
+router.route('/student/:id')
+  .get(getStudentAttendanceData);
+
 // Get/update attendance record - must be placed after all specific routes
 router.route('/:id')
   .get(getAttendanceById)
   .put(authorize('admin', 'faculty'), updateAttendance)
   .delete(authorize('faculty', 'admin'), deleteAttendance);
 
-module.exports = router; 
+module.exports = router;
