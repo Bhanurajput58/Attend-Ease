@@ -2,9 +2,9 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { FaUser, FaSignOutAlt, FaHome, FaChartBar, FaCalendarAlt, FaUsers, FaCog, FaFileAlt } from 'react-icons/fa';
-import '../styles/Navbar.css';
+import '../styles/Header.css';
 
-const Navbar = () => {
+const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -50,31 +50,48 @@ const Navbar = () => {
         </Link>
       </div>
 
-      <div className="navbar-menu">
-        {getNavLinks().map((link) => (
-          <Link
-            key={link.path}
-            to={link.path}
-            className="nav-link"
-          >
-            <span className="nav-icon">{link.icon}</span>
-            <span className="nav-label">{link.label}</span>
-          </Link>
-        ))}
-      </div>
-
-      <div className="navbar-end">
-        <div className="user-info">
-          <span className="user-name">{user?.name}</span>
-          <span className={`user-role ${user?.role}`}>{user?.role}</span>
-        </div>
-        <button onClick={handleLogout} className="logout-button">
-          <FaSignOutAlt className="logout-icon" />
-          <span>Logout</span>
-        </button>
+      <div className="header-right">
+        {user ? (
+          <>
+            <div className="navbar-menu">
+              {getNavLinks().map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className="nav-link"
+                >
+                  <span className="nav-icon">{link.icon}</span>
+                  <span className="nav-label">{link.label}</span>
+                </Link>
+              ))}
+            </div>
+            <div className="navbar-end">
+              <div className="user-info">
+                <span className="user-name">{user?.name}</span>
+                <span className={`user-role ${user?.role}`}>{user?.role}</span>
+              </div>
+              <button onClick={handleLogout} className="logout-button">
+                <FaSignOutAlt className="logout-icon" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="navbar-menu">
+              <a href="#about" className="nav-link">About Us</a>
+              <a href="#features" className="nav-link">Features</a>
+              <a href="#contact" className="nav-link">Contact</a>
+            </div>
+            <div className="navbar-end">
+              <Link to="/login" className="btn-login nav-link">Login</Link>
+              <Link to="/register" className="btn-register nav-link">Register</Link>
+            </div>
+          </>
+        )}
       </div>
     </nav>
   );
 };
 
-export default Navbar; 
+export default Header; 

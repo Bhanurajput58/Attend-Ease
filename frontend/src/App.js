@@ -41,10 +41,12 @@ const App = () => {
     <>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+        </Route>
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
@@ -63,7 +65,6 @@ const App = () => {
               </RoleRequired>
             } />
             
-            {/* Also define a base route for the student dashboard */}
             <Route path="/student-dashboard" element={
               <RoleRequired roles={FACULTY_ADMIN_ROLES}>
                 <StudentDashboard />
@@ -173,7 +174,7 @@ const App = () => {
               </RoleRequired>
             } />
             
-            {/* More specific routes should come before the generic one */}
+            {/* More specific routes should come */}
             <Route path="/attendance/edit/:id" element={
               <RoleRequired roles={FACULTY_ADMIN_ROLES}>
                 <AttendanceDetailPage mode="edit" />
