@@ -65,12 +65,15 @@ api.interceptors.request.use(
 */
 
 const StudentDashboard = () => {
-  const { studentId } = useParams(); // Get studentId from URL if available
+  const params = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  // State for student search/selection
-  const [selectedStudentId, setSelectedStudentId] = useState(studentId || '');
+
+  // Determine which student to show: own or other
+  const studentId = params.studentId || user?.id;
+
+  // State for student search/selection (for faculty/admin)
+  const [selectedStudentId, setSelectedStudentId] = useState(params.studentId || '');
   const [studentsList, setStudentsList] = useState([]);
   const [studentSearchLoading, setStudentSearchLoading] = useState(false);
   
@@ -158,21 +161,21 @@ const StudentDashboard = () => {
       fetchStudentsList();
     }
   }, [user]);
-  
-  // New effect to update selected student when studentId from URL changes
+
+  // Update selected student when route param changes (faculty/admin view)
   useEffect(() => {
-    if (studentId && studentId !== selectedStudentId) {
-      setSelectedStudentId(studentId);
+    if (params.studentId && params.studentId !== selectedStudentId) {
+      setSelectedStudentId(params.studentId);
     }
-  }, [studentId]);
-  
-  // Effect for fetching student data when component mounts or when selectedStudentId changes
+  }, [params.studentId]);
+
+  // Fetch student data when selectedStudentId or user changes
   useEffect(() => {
-    const idToFetch = selectedStudentId || (user && user.role === 'student' ? user.id : null);
+    const idToFetch = params.studentId || (user && user.role === 'student' ? user.id : null);
     if (idToFetch) {
       fetchStudentData(idToFetch);
     }
-  }, [selectedStudentId, user]);
+  }, [params.studentId, user]);
   
   // Add debug logging for authentication state
   useEffect(() => {
@@ -314,7 +317,7 @@ const StudentDashboard = () => {
       }
 
       // Determine which student's data to fetch
-      const targetStudentId = studentId || user.id;
+      const targetStudentId = params.studentId || user.id;
       if (!targetStudentId) {
         setError('Unable to determine student ID');
         return;
@@ -324,89 +327,7 @@ const StudentDashboard = () => {
     };
 
     loadInitialData();
-  }, [studentId, user]);
-
-  // Handle student selection change
-  const handleStudentChange = (event) => {
-    const newStudentId = event.target.value;
-    setSelectedStudentId(newStudentId);
-    
-    // Update URL to reflect selected student
-    if (newStudentId) {
-      navigate(`/student-dashboard/${newStudentId}`);
-    } else {
-      navigate('/student-dashboard');
-    }
-    
-    // Fetch the selected student's data
-    fetchStudentData(newStudentId);
-  };
-  
-  // Function to handle manual refresh
-  const handleRefresh = () => {
-    const studentId = localStorage.getItem('userId') || '6603d12d5aec5ab5a16320c1';
-    fetchStudentData(studentId);
-  };
-  
-  // Fetch student data from backend - initial load
-  useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      
-      // Check authentication first
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.warn('No authentication token found. Redirecting to login page...');
-        setError('Authentication required. Please log in to access the dashboard.');
-        setLoading(false);
-        
-        // Redirect to login page after a short delay
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
-        return;
-      }
-      
-      // Determine the student ID - first try from URL params, then from auth context, then localStorage
-      let targetStudentId = null;
-      
-      // Try to get ID from URL params first
-      if (studentId) {
-        targetStudentId = studentId;
-      }
-      // Then try from auth context
-      else if (user?.id || user?._id) {
-        targetStudentId = user.id || user._id;
-      }
-      // Finally try localStorage
-      else {
-        targetStudentId = localStorage.getItem('userId');
-      }
-      
-      // If still no ID, show an error
-      if (!targetStudentId) {
-        console.warn('No user ID found for dashboard');
-        setError('Unable to determine which student data to display. Please log in again.');
-        setLoading(false);
-        return;
-      }
-      
-      console.log('Fetching data for student ID:', targetStudentId);
-      
-      // Fetch data
-      await fetchStudentData(targetStudentId);
-      
-      // Fetch attendance goal if saved
-      const savedGoal = localStorage.getItem('attendanceGoal');
-      if (savedGoal) {
-        setAttendanceGoal(Number(savedGoal));
-      }
-      
-      setLoading(false);
-    };
-    
-    loadInitialData();
-  }, [studentId, user]);
+  }, [params.studentId, user]);
   
   // Save attendance goal to localStorage when changed
   useEffect(() => {
@@ -497,6 +418,25 @@ const StudentDashboard = () => {
     } catch (err) {
       console.error('Error exporting report:', err);
       alert('Failed to generate report. Please try again later.');
+    }
+  };
+
+  // Student selector for faculty/admin
+  const handleStudentChange = (event) => {
+    const newStudentId = event.target.value;
+    setSelectedStudentId(newStudentId);
+    if (newStudentId) {
+      navigate(`/student/dashboard/${newStudentId}`);
+    } else {
+      navigate('/student/dashboard');
+    }
+  };
+
+  // Refresh handler for attendance data
+  const handleRefresh = () => {
+    const idToFetch = params.studentId || (user && user.role === 'student' ? user.id : null);
+    if (idToFetch) {
+      fetchStudentData(idToFetch);
     }
   };
 

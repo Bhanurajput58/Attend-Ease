@@ -224,9 +224,9 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role: selectedRole } = req.body;
 
-    console.log('Login attempt for email:', email);
+    console.log('Login attempt for email:', email, 'with role:', selectedRole);
 
     // Find user by email
     const user = await User.findOne({ email }).select('+password');
@@ -235,7 +235,7 @@ app.post('/api/auth/login', async (req, res) => {
       console.log('User not found with email:', email);
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid credentials or role'
       });
     }
 
@@ -245,7 +245,16 @@ app.post('/api/auth/login', async (req, res) => {
       console.log('Password does not match for user:', email);
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid credentials or role'
+      });
+    }
+
+    // Check if selected role matches user's actual role
+    if (!selectedRole || user.role !== selectedRole) {
+      console.log(`Role mismatch: user role is ${user.role}, selected role is ${selectedRole}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials or role'
       });
     }
 

@@ -325,7 +325,7 @@ const SessionDetailPage = () => {
                   <td>
                     <div className="action-buttons">
                       <Link 
-                        to={`/student-profile/${student.id}`} 
+                        to={`/student/profile/${student.id}`} 
                         className="action-btn view-btn"
                       >
                         View Profile

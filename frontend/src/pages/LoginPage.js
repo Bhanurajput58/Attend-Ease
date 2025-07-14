@@ -31,7 +31,7 @@ const LoginPage = () => {
 
         try {
             console.log('Attempting login with:', formData.email);
-            const loginResponse = await login(formData.email, formData.password);
+            const loginResponse = await login(formData.email, formData.password, selectedRole);
             console.log('Login successful', loginResponse);
 
             if (loginResponse) {
@@ -117,12 +117,12 @@ const LoginPage = () => {
                         <div className="login-header">
                             <h2>
                                 {selectedRole === 'student' && 'Student Login'}
-                                {selectedRole === 'educator' && 'Educator Login'}
+                                {selectedRole === 'faculty' && 'Educator Login'}
                                 {selectedRole === 'admin' && 'Admin Login'}
                             </h2>
                             <p>
                                 {selectedRole === 'student' && 'Access your classes, attendance, and more.'}
-                                {selectedRole === 'educator' && 'Manage your courses and student attendance.'}
+                                {selectedRole === 'faculty' && 'Manage your courses and student attendance.'}
                                 {selectedRole === 'admin' && 'Administer users and oversee attendance records.'}
                             </p>
                         </div>
@@ -135,8 +135,8 @@ const LoginPage = () => {
                                 Student
                             </button>
                             <button
-                                className={`role-btn ${selectedRole === 'educator' ? 'active' : ''}`}
-                                onClick={() => handleRoleSelect('educator')}
+                                className={`role-btn ${selectedRole === 'faculty' ? 'active' : ''}`}
+                                onClick={() => handleRoleSelect('faculty')}
                             >
                                 Educator
                             </button>

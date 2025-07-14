@@ -21,21 +21,21 @@ const Header = () => {
         return [
           { path: '/student/dashboard', label: 'Dashboard', icon: <FaHome /> },
           { path: '/student/attendance', label: 'Attendance', icon: <FaCalendarAlt /> },
-          { path: '/profile', label: 'Profile', icon: <FaUser /> }
+          { path: '/student/profile', label: 'Profile', icon: <FaUser /> }
         ];
       case 'faculty':
         return [
           { path: '/faculty/dashboard', label: 'Dashboard', icon: <FaHome /> },
           { path: '/faculty/attendance', label: 'Take Attendance', icon: <FaCalendarAlt /> },
           { path: '/reports/attendance', label: 'Reports', icon: <FaFileAlt /> },
-          { path: '/profile', label: 'Profile', icon: <FaUser /> }
+          { path: '/faculty/profile', label: 'Profile', icon: <FaUser /> }
         ];
       case 'admin':
         return [
           { path: '/admin/dashboard', label: 'Dashboard', icon: <FaHome /> },
           { path: '/admin/users', label: 'Users', icon: <FaUsers /> },
           { path: '/admin/settings', label: 'Settings', icon: <FaCog /> },
-          { path: '/profile', label: 'Profile', icon: <FaUser /> }
+          { path: '/admin/profile', label: 'Profile', icon: <FaUser /> }
         ];
       default:
         return [];

@@ -185,7 +185,7 @@ const StudentsListPage = () => {
   const handleViewProfile = (studentId) => {
     // Navigate to the student profile page
     console.log(`Navigating to student profile page for ID: ${studentId}`);
-    navigate(`/student-profile/${studentId}`);
+    navigate(`/student/profile/${studentId}`);
   };
 
   return (

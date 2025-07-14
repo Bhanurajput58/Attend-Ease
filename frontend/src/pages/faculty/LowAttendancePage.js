@@ -129,7 +129,7 @@ const LowAttendancePage = () => {
   
   // Navigate to student profile
   const viewStudentProfile = (studentId) => {
-    navigate(`/student-profile/${studentId}`);
+    navigate(`/student/profile/${studentId}`);
   };
   
   // Navigate back to faculty dashboard

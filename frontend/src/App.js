@@ -10,9 +10,9 @@ import { RoleRequired } from './components/RoleBasedAccess';
 import { ReportsPage, ReportDetail, AttendanceReportsPage } from './pages/reports';
 import { CourseListPage, CourseDetailPage } from './pages/courses';
 import { AttendanceListPage, TakeAttendancePage, AttendanceDetailPage, SessionDetailPage } from './pages/attendance';
-import { ProfilePage, StatsPage } from './pages/profile';
 import StudentsListPage from './pages/faculty/StudentsListPage';
 import Header from './components/Header';
+import ProfilePage from './pages/ProfilePage';
 
 // Import role-specific pages
 import StudentDashboard from './pages/students/StudentDashboard';
@@ -24,9 +24,6 @@ import LowAttendancePage from './pages/faculty/LowAttendancePage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import EnhancedAdminDashboard from './pages/admin/EnhancedAdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
-
-// Import the StudentProfilePage component
-import StudentProfilePage from './pages/students/StudentProfilePage';
 
 // Define route access by role
 const FACULTY_ADMIN_ROLES = ['faculty', 'admin'];
@@ -48,37 +45,33 @@ const App = () => {
         <Route path="/unauthorized" element={<Unauthorized />} />
         
         {/* Protected routes */}
-        <Route element={<ProtectedRoute />}>
-          {/* Student routes */}
+        <Route element={<ProtectedRoute />}>  
+          {/* Global profile page for all roles */}
+          <Route path="/student/profile" element={<ProfilePage />} />
+          <Route path="/faculty/profile" element={<ProfilePage />} />
+          <Route path="/admin/profile" element={<ProfilePage />} />
+          {/* Student dashboard (own) */}
           <Route path="/student/dashboard" element={
             <RoleRequired roles={['student']}>
               <StudentDashboard />
             </RoleRequired>
           } />
-          
-          {/* New route for student dashboard with studentId parameter */}
-          <Route path="/student-dashboard/:studentId" element={
+          {/* Student dashboard (faculty/admin view) */}
+          <Route path="/student/dashboard/:studentId" element={
             <RoleRequired roles={FACULTY_ADMIN_ROLES}>
               <StudentDashboard />
             </RoleRequired>
           } />
-          
-          <Route path="/student-dashboard" element={
-            <RoleRequired roles={FACULTY_ADMIN_ROLES}>
-              <StudentDashboard />
-            </RoleRequired>
-          } />
-          
-          {/* Route for course attendance details */}
-          <Route path="/course-attendance/:courseId" element={
-            <RoleRequired roles={ALL_ROLES}>
-              <CourseAttendanceDetail />
-            </RoleRequired>
-          } />
-          
+          {/* Student attendance (own) */}
           <Route path="/student/attendance" element={
             <RoleRequired roles={['student']}>
               <StudentAttendance />
+            </RoleRequired>
+          } />
+          {/* Course attendance details */}
+          <Route path="/course-attendance/:courseId" element={
+            <RoleRequired roles={ALL_ROLES}>
+              <CourseAttendanceDetail />
             </RoleRequired>
           } />
 
@@ -127,13 +120,6 @@ const App = () => {
           } />
 
           {/* Common routes */}
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/stats" element={
-            <RoleRequired roles={FACULTY_ADMIN_ROLES}>
-              <StatsPage />
-            </RoleRequired>
-          } />
-          
           {/* Reports routes - Faculty/Admin only */}
           <Route path="/reports" element={
             <RoleRequired roles={FACULTY_ADMIN_ROLES}>
@@ -150,62 +136,37 @@ const App = () => {
               <ReportDetail />
             </RoleRequired>
           } />
-          
           {/* Courses routes - All users but students see limited data */}
           <Route path="/courses" element={<CourseListPage />} />
           <Route path="/courses/:id" element={<CourseDetailPage />} />
-          
           {/* Attendance routes */}
           <Route path="/attendance" element={<AttendanceListPage />} />
-          
           {/* Take attendance - Faculty/Admin only */}
           <Route path="/attendance/take" element={
             <RoleRequired roles={FACULTY_ADMIN_ROLES}>
               <TakeAttendancePage />
             </RoleRequired>
           } />
-          
           {/* More specific attendance routes first */}
           <Route path="/attendance/session/:id" element={
             <RoleRequired roles={FACULTY_ADMIN_ROLES}>
               <SessionDetailPage />
             </RoleRequired>
           } />
-          
           {/* More specific routes should come */}
           <Route path="/attendance/edit/:id" element={
             <RoleRequired roles={FACULTY_ADMIN_ROLES}>
               <AttendanceDetailPage mode="edit" />
             </RoleRequired>
           } />
-          
           <Route path="/attendance/course/:courseId" element={<AttendanceListPage filter="course" />} />
-          
           {/* Generic attendance detail - Must be last among attendance routes */}
           <Route path="/attendance/:id" element={<AttendanceDetailPage />} />
-          
           {/* Redirect old student detail route to the new profile page */}
           <Route path="/students/:id" element={
-            <Navigate replace to={location => `/student-profile/${location.pathname.split('/')[2]}`} />
-          } />
-          
-          <Route path="/settings" element={
-            <div className="content-container">
-              <h1>Settings</h1>
-              <div className="content-card">
-                <p>Settings page coming soon...</p>
-              </div>
-            </div>
-          } />
-
-          {/* New route for student profiles */}
-          <Route path="/student-profile/:id" element={
-            <RoleRequired roles={FACULTY_ADMIN_ROLES}>
-              <StudentProfilePage />
-            </RoleRequired>
+            <Navigate replace to={location => `/student/profile/${location.pathname.split('/')[2]}`} />
           } />
         </Route>
-        
         {/* Fallback route */}
         <Route path="*" element={<NotFound />} />
       </Routes>

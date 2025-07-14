@@ -37,15 +37,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, role) => {
     try {
       setLoading(true);
       setError(null);
       
       console.log('Making login request to:', API_ENDPOINTS.LOGIN);
-      console.log('With credentials:', { email });
+      console.log('With credentials:', { email, role });
       
-      const response = await api.post(API_ENDPOINTS.LOGIN, { email, password });
+      const response = await api.post(API_ENDPOINTS.LOGIN, { email, password, role });
       console.log('Login response:', response.data);
       
       if (!response.data.success) {
