@@ -194,3 +194,16 @@ exports.getLowAttendanceStudents = async (req, res) => {
     });
   }
 }; 
+
+exports.getFacultyById = async (req, res) => {
+  try {
+    const Faculty = require('../models/Faculty');
+    const faculty = await Faculty.findById(req.params.id);
+    if (!faculty) {
+      return res.status(404).json({ success: false, message: 'Faculty not found' });
+    }
+    res.json({ success: true, data: faculty });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+}; 

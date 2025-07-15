@@ -346,6 +346,8 @@ app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/faculty', require('./routes/faculty'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/faculties', require('./routes/faculties'));
+app.use('/api/admins', require('./routes/admins'));
 
 // API Routes with both with and without /api prefix for backwards compatibility
 const authRoutes = require('./routes/auth');
@@ -353,6 +355,8 @@ const attendanceRoutes = require('./routes/attendance');
 const studentsRoutes = require('./routes/students');
 const facultyRoutes = require('./routes/faculty');
 const adminRoutes = require('./routes/admin');
+const facultiesRoutes = require('./routes/faculties');
+const adminsRoutes = require('./routes/admins');
 
 // Mount routes both with and without /api prefix
 ['/api', ''].forEach(prefix => {
@@ -361,6 +365,8 @@ const adminRoutes = require('./routes/admin');
   app.use(`${prefix}/students`, studentsRoutes);
   app.use(`${prefix}/faculty`, facultyRoutes);
   app.use(`${prefix}/admin`, adminRoutes);
+  app.use(`${prefix}/faculties`, facultiesRoutes);
+  app.use(`${prefix}/admins`, adminsRoutes);
 });
 
 // Default route

@@ -3,7 +3,8 @@ const {
   importStudents,
   getStudentsByCourse,
   getStudent,
-  getStudentTimetable
+  getStudentTimetable,
+  getStudentByUserId
 } = require('../controllers/studentsImport');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -27,5 +28,7 @@ router.route('/:studentId/timetable')
 // Get student by ID or roll number - must be last as it has a generic parameter
 router.route('/:identifier')
   .get(getStudent);
+
+router.get('/by-user/:userId', getStudentByUserId);
 
 module.exports = router;

@@ -1,5 +1,7 @@
 const ImportedStudent = require('../models/ImportedStudent');
+const Student = require('../models/Student'); // Add this import
 const Course = require('../models/Course');
+const mongoose = require('mongoose');
 
 // @desc    Import students from Excel
 // @route   POST /api/students/import
@@ -94,24 +96,34 @@ exports.getStudentsByCourse = async (req, res) => {
 exports.getStudent = async (req, res) => {
   try {
     const identifier = req.params.identifier;
-    
-    // Check if identifier is a MongoDB ID or roll number
+    // Check if identifier is a MongoDB ID
     const isObjectId = identifier.match(/^[0-9a-fA-F]{24}$/);
-    
-    let student;
+    let student = null;
     if (isObjectId) {
-      student = await ImportedStudent.findById(identifier);
+      // Try finding by _id
+      student = await Student.findById(identifier);
+      // If not found, try finding by user field (as ObjectId, safely)
+      if (!student) {
+        let userObjectId = null;
+        try {
+          userObjectId = mongoose.Types.ObjectId(identifier);
+        } catch (e) {
+          // Not a valid ObjectId, skip this search
+        }
+        if (userObjectId) {
+          student = await Student.findOne({ user: userObjectId });
+        }
+      }
     } else {
-      student = await ImportedStudent.findOne({ rollNumber: identifier });
+      // Try finding by rollNumber
+      student = await Student.findOne({ rollNumber: identifier });
     }
-    
     if (!student) {
       return res.status(404).json({ 
         success: false,
         message: 'Student not found' 
       });
     }
-    
     res.status(200).json({
       success: true,
       data: student
@@ -204,5 +216,18 @@ exports.getStudentTimetable = async (req, res) => {
       message: 'Server Error',
       error: error.message
     });
+  }
+};
+
+exports.getStudentByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const student = await Student.findOne({ user: userId });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+    res.status(200).json({ success: true, data: student });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
 };

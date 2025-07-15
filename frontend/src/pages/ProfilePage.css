@@ -20,8 +20,10 @@
 }
 .profile-container {
   display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 32px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .profile-card {
   min-width: 260px;
@@ -35,12 +37,12 @@
   align-items: center;
 }
 .profile-image {
-  width: 110px;
-  height: 110px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 16px;
-  border: 3px solid #3498db;
+  border: 2px solid #3498db;
 }
 .user-role {
   color: #3498db;
@@ -78,9 +80,80 @@
   .profile-container {
     flex-direction: column;
     gap: 16px;
+    align-items: stretch;
   }
   .profile-card, .profile-details {
     max-width: 100%;
     min-width: 0;
   }
+} 
+
+/* Add styles for edit profile button and modal */
+.edit-profile-btn {
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.edit-profile-btn:hover {
+  background: #217dbb;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 10px;
+  padding: 32px 28px;
+  min-width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+.edit-profile-form label {
+  display: block;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+.edit-profile-form input {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 18px;
+}
+.modal-actions button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.modal-actions button[type="button"] {
+  background: #eee;
+  color: #333;
+}
+.modal-actions button[type="submit"] {
+  background: #3498db;
+  color: #fff;
 } 

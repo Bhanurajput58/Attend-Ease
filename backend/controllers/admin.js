@@ -226,4 +226,17 @@ exports.getAllUsers = async (req, res) => {
       error: error.message
     });
   }
+};
+
+exports.getAdminById = async (req, res) => {
+  try {
+    const Admin = require('../models/Admin');
+    const admin = await Admin.findById(req.params.id);
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+    res.json({ success: true, data: admin });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
 }; 
