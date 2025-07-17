@@ -230,8 +230,8 @@ exports.getAllUsers = async (req, res) => {
 
 exports.getAdminById = async (req, res) => {
   try {
-    const Admin = require('../models/Admin');
-    const admin = await Admin.findById(req.params.id);
+    const User = require('../models/User');
+    const admin = await User.findOne({ _id: req.params.id, role: 'admin' });
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin not found' });
     }

@@ -16,7 +16,7 @@ const generateToken = (id) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role = 'student' } = req.body;
+    const { name, email, password, role = 'student', department, designation } = req.body;
     
     console.log('Registration request received:', { name, email, role });
 
@@ -34,70 +34,10 @@ exports.register = async (req, res) => {
       });
     }
 
-    let user;
-    // Create user in the appropriate collection based on role
-    switch (role) {
-      case 'student':
-        console.log('Creating new student');
-        user = await Student.create({
-          name,
-          email,
-          password,
-          role: 'student'
-        });
-        break;
-        
-      case 'faculty':
-        console.log('Creating new faculty');
-        user = await Faculty.create({
-          name,
-          email,
-          password,
-          role: 'faculty'
-        });
-        break;
-        
-      case 'admin':
-        console.log('Creating new admin user with details:', { name, email });
-        try {
-          user = await Admin.create({
-            name,
-            email,
-            password,
-            role: 'admin',
-            permissions: {
-              manageUsers: true,
-              manageCourses: true,
-              manageAttendance: true,
-              generateReports: true,
-              systemSettings: true
-            }
-          });
-          console.log('Admin created successfully:', user._id);
-        } catch (adminError) {
-          console.error('Error creating admin user:', adminError);
-          return res.status(500).json({ 
-            success: false,
-            message: 'Failed to create admin user', 
-            error: adminError.message 
-          });
-        }
-        break;
-        
-      default:
-        // For backward compatibility, also create in the User collection
-        console.log('Creating generic user');
-        user = await User.create({
-          name,
-          email,
-          password,
-          role: role || 'student'
-        });
-    }
-
-    // Also create a user in the main User collection for authentication
+    // Create user in the main User collection for authentication
+    let authUser;
     try {
-      const authUser = await User.create({
+      authUser = await User.create({
         name,
         email,
         password,
@@ -129,15 +69,29 @@ exports.register = async (req, res) => {
       });
     }
 
+    // If faculty, also create in faculties collection
+    let facultyDoc = null;
+    if (role === 'faculty') {
+      const Faculty = require('../models/Faculty');
+      facultyDoc = await Faculty.create({
+        user: authUser._id,
+        name,
+        email,
+        department: department || '',
+        designation: designation || 'Assistant Professor',
+        // other faculty fields can be added here if present in req.body
+      });
+    }
+
     // Generate token
-    const token = generateToken(user._id);
+    const token = generateToken(authUser._id);
     
     // Extract user info based on role
     let userInfo = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role
+      id: authUser._id,
+      name: authUser.name,
+      email: authUser.email,
+      role: authUser.role
     };
     
     // Add role-specific properties

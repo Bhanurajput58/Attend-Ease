@@ -53,52 +53,40 @@ const facultySchema = new mongoose.Schema({
 
 // Encrypt password before saving
 facultySchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
+  // Always generate employeeId for new faculty
+  if (this.isNew) {
+    const year = new Date().getFullYear().toString().substr(-2);
+    const deptCode = this.department ? this.department.substring(0, 2).toUpperCase() : 'XX';
+    // Find highest existing employee ID
+    const highestFaculty = await this.constructor.findOne(
+      { employeeId: new RegExp('^F' + year + deptCode) },
+      {},
+      { sort: { employeeId: -1 } }
+    );
+    let nextNumber = 1;
+    if (highestFaculty && highestFaculty.employeeId) {
+      const numericPart = parseInt(highestFaculty.employeeId.substring(5));
+      nextNumber = numericPart + 1;
+    }
+    // Create employee ID in format FYYDCNNN (F=faculty, YY=year, DC=dept code, NNN=sequential number)
+    this.employeeId = `F${year}${deptCode}${nextNumber.toString().padStart(3, '0')}`;
+  }
+
+  // Only hash password if it is being set/modified
+  if (this.isModified('password')) {
+    console.log('Hashing password for faculty:', this.email);
+    try {
+      const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
+      console.log('Password hashed successfully');
+    } catch (error) {
+      console.error('Error hashing password:', error);
+      return next(error);
+    }
+  } else {
     console.log('Password not modified, skipping hashing');
-    next();
-    return;
   }
-  console.log('Hashing password for faculty:', this.email);
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    console.log('Password hashed successfully');
-    
-    // Generate a faculty ID if not provided
-    if (!this.facultyId) {
-      const prefix = 'FAC';
-      const randomId = Math.floor(1000 + Math.random() * 9000);
-      this.facultyId = `${prefix}${randomId}`;
-    }
-    
-    // Generate a unique employee ID before saving
-    if (this.isNew) {
-      const year = new Date().getFullYear().toString().substr(-2);
-      const deptCode = this.department.substring(0, 2).toUpperCase();
-      
-      // Find highest existing employee ID
-      const highestFaculty = await this.constructor.findOne(
-        { employeeId: new RegExp('^F' + year + deptCode) }, 
-        {}, 
-        { sort: { employeeId: -1 } }
-      );
-      
-      let nextNumber = 1;
-      if (highestFaculty && highestFaculty.employeeId) {
-        // Extract the numeric part and increment
-        const numericPart = parseInt(highestFaculty.employeeId.substring(5));
-        nextNumber = numericPart + 1;
-      }
-      
-      // Create employee ID in format FYYDCNNN (F=faculty, YY=year, DC=dept code, NNN=sequential number)
-      this.employeeId = `F${year}${deptCode}${nextNumber.toString().padStart(3, '0')}`;
-    }
-    
-    next();
-  } catch (error) {
-    console.error('Error hashing password:', error);
-    next(error);
-  }
+  next();
 });
 
 // Match password

@@ -138,6 +138,32 @@ exports.getStudent = async (req, res) => {
   }
 };
 
+// @desc    Update student profile
+// @route   PUT /api/students/:id
+// @access  Private/Student,Admin
+exports.updateStudent = async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    // Only allow certain fields to be updated
+    const allowedFields = [
+      'name', 'email', 'rollNumber', 'program', 'major', 'semester', 'currentSemester', 'gpa', 'department', 'phone', 'profileImage'
+    ];
+    const updates = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+    const student = await Student.findByIdAndUpdate(studentId, updates, { new: true, runValidators: true });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+    res.status(200).json({ success: true, data: student });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+};
+
 // @desc    Get student's timetable
 // @route   GET /api/students/:studentId/timetable
 // @access  Private

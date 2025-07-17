@@ -2,6 +2,7 @@ const Course = require('../models/Course');
 const Attendance = require('../models/Attendance');
 const ImportedStudent = require('../models/ImportedStudent');
 const User = require('../models/User');
+const Faculty = require('../models/Faculty'); // Added Faculty model import
 
 // @desc    Get faculty dashboard data
 // @route   GET /api/faculty/dashboard
@@ -197,8 +198,52 @@ exports.getLowAttendanceStudents = async (req, res) => {
 
 exports.getFacultyById = async (req, res) => {
   try {
-    const Faculty = require('../models/Faculty');
-    const faculty = await Faculty.findById(req.params.id);
+    const User = require('../models/User');
+    const faculty = await User.findOne({ _id: req.params.id, role: 'faculty' });
+    if (!faculty) {
+      return res.status(404).json({ success: false, message: 'Faculty not found' });
+    }
+    res.json({ success: true, data: faculty });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+}; 
+
+// @desc    Update faculty by _id
+// @route   PUT /api/faculties/:id
+// @access  Private/Admin,Faculty
+exports.updateFaculty = async (req, res) => {
+  try {
+    // Only allow certain fields to be updated
+    const allowedFields = [
+      'name', 'email', 'department', 'designation', 'employeeId', 'joinDate', 'specialization', 'qualifications', 'courses', 'studentsCount', 'profileImage'
+    ];
+    const updates = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+    const faculty = await Faculty.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    );
+    if (!faculty) {
+      return res.status(404).json({ success: false, message: 'Faculty not found' });
+    }
+    res.json({ success: true, data: faculty });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+}; 
+
+// @desc    Get faculty by user ID
+// @route   GET /api/faculties/by-user/:userId
+// @access  Private/Faculty,Admin
+exports.getFacultyByUserId = async (req, res) => {
+  try {
+    const faculty = await Faculty.findOne({ user: req.params.userId });
     if (!faculty) {
       return res.status(404).json({ success: false, message: 'Faculty not found' });
     }

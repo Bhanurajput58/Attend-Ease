@@ -25,6 +25,10 @@ router.route('/course/:courseId')
 router.route('/:studentId/timetable')
   .get(getStudentTimetable);
 
+// Add update student profile endpoint
+router.route('/:id')
+  .put(authorize('student', 'admin'), require('../controllers/studentsImport').updateStudent);
+
 // Get student by ID or roll number - must be last as it has a generic parameter
 router.route('/:identifier')
   .get(getStudent);

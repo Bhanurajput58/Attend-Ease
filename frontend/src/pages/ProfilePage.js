@@ -54,7 +54,29 @@ const ProfilePage = () => {
       }
       // Faculty and admin logic unchanged
       if (authUser.role === 'faculty') {
-        endpoint = `/api/faculties/${authUser.id || authUser._id}`;
+        try {
+          // Try to get faculty by user ID (custom endpoint)
+          const resByUser = await api.get(`/api/faculties/by-user/${authUser.id || authUser._id}`);
+          console.log('Faculty fetch response:', resByUser.data);
+          if (resByUser.data.success && resByUser.data.data && resByUser.data.data._id) {
+            console.log('Faculty profile fetched successfully:', resByUser.data.data);
+            console.log('Faculty ID:', resByUser.data.data._id);
+            setProfile(resByUser.data.data);
+            setLoading(false);
+            return;
+          } else {
+            console.log('Faculty profile not found in response:', resByUser.data);
+            setError('Faculty profile not found');
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Error fetching faculty profile:', err);
+          console.error('Error response:', err.response?.data);
+          setError('Failed to fetch faculty profile');
+          setLoading(false);
+          return;
+        }
       } else if (authUser.role === 'admin') {
         endpoint = `/api/admins/${authUser.id || authUser._id}`;
       }
@@ -89,14 +111,71 @@ const ProfilePage = () => {
 
   // Modal logic (edit form) remains unchanged, but uses profile data
   const handleEditClick = () => {
-    setFormData(profile);
+    // Ensure qualifications is always an array for editing
+    let editProfile = { ...profile };
+    if (editProfile.qualifications && typeof editProfile.qualifications === 'string') {
+      editProfile.qualifications = editProfile.qualifications.split(',').map(q => q.trim()).filter(q => q);
+    } else if (!Array.isArray(editProfile.qualifications)) {
+      editProfile.qualifications = [];
+    }
+    setFormData(editProfile);
     setIsModalOpen(true);
   };
   const handleCloseModal = () => setIsModalOpen(false);
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleSave = (e) => {
+  const handleChange = (e) => {
+    if (e.target.name === 'qualifications') {
+      setFormData({ ...formData, qualifications: e.target.value });
+    } else {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
+    }
+  };
+  const handleSave = async (e) => {
     e.preventDefault();
-    setIsModalOpen(false);
+    let submitData = { ...formData };
+    // Convert qualifications to array if it's a string
+    if (authUser.role === 'faculty' && typeof submitData.qualifications === 'string') {
+      submitData.qualifications = submitData.qualifications.split(',').map(q => q.trim()).filter(q => q);
+    }
+    if (authUser.role === 'student') {
+      try {
+        const res = await api.put(`/api/students/${profile._id}`, submitData);
+        if (res.data.success) {
+          setProfile(res.data.data);
+          setIsModalOpen(false);
+        } else {
+          setError(res.data.message || 'Failed to update profile');
+        }
+      } catch (err) {
+        setError('Failed to update profile');
+      }
+    } else if (authUser.role === 'faculty') {
+      try {
+        // Only update faculties collection
+        console.log('Updating faculty with ID:', profile._id);
+        console.log('Faculty profile data:', profile);
+        console.log('Submit data:', submitData);
+        const res = await api.put(`/api/faculties/${profile._id}`, submitData);
+        if (res.data.success) {
+          // Refetch from faculties collection to ensure up-to-date data
+          const refetch = await api.get(`/api/faculties/by-user/${authUser.id || authUser._id}`);
+          if (refetch.data.success && refetch.data.data) {
+            setProfile(refetch.data.data);
+          } else {
+            setProfile(res.data.data);
+          }
+          setIsModalOpen(false);
+        } else {
+          setError(res.data.message || 'Failed to update profile');
+        }
+      } catch (err) {
+        console.error('Faculty update error:', err);
+        console.error('Error response:', err.response?.data);
+        console.error('Error status:', err.response?.status);
+        setError('Failed to update profile');
+      }
+    } else {
+      setIsModalOpen(false); // For other roles, just close for now
+    }
   };
 
   return (
@@ -126,8 +205,10 @@ const ProfilePage = () => {
             <>
               <h2>Student Details</h2>
               <div><strong>Roll Number:</strong> {profile.rollNumber || 'N/A'}</div>
-              <div><strong>Program:</strong> {profile.program || profile.major || 'N/A'}</div>
-              <div><strong>Semester:</strong> {profile.semester || profile.currentSemester || 'N/A'}</div>
+              <div><strong>Name:</strong> {profile.name || 'N/A'}</div>
+              <div><strong>Email:</strong> {profile.email || 'N/A'}</div>
+              <div><strong>Department:</strong> {profile.department || 'N/A'}</div>
+              <div><strong>Semester:</strong> {profile.semester || 'N/A'}</div>
               <div><strong>GPA:</strong> {profile.gpa || 'N/A'}</div>
             </>
           )}
@@ -175,13 +256,15 @@ const ProfilePage = () => {
                     <input name="rollNumber" value={formData.rollNumber || ''} onChange={handleChange} />
                   </label>
                   <label>
-                    Program:
-                    <input name="program" value={formData.program || formData.major || ''} onChange={handleChange} />
+                    Department:
+                    <input name="department" value={formData.department || ''} onChange={handleChange} />
                   </label>
                   <label>
                     Semester:
-                    <input name="semester" value={formData.semester || formData.currentSemester || ''} onChange={handleChange} />
+                    <input name="semester" value={formData.semester || ''} onChange={handleChange} />
                   </label>
+                  
+                  
                   <label>
                     GPA:
                     <input name="gpa" value={formData.gpa || ''} onChange={handleChange} />
@@ -208,7 +291,7 @@ const ProfilePage = () => {
                   </label>
                   <label>
                     Qualifications:
-                    <input name="qualifications" value={formData.qualifications ? formData.qualifications.join(', ') : ''} onChange={handleChange} />
+                    <input name="qualifications" value={Array.isArray(formData.qualifications) ? formData.qualifications.join(', ') : (formData.qualifications || '')} onChange={handleChange} />
                   </label>
                 </>
               )}
