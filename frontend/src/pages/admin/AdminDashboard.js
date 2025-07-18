@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../config/api';
-import '../../styles/DashboardPage.css';
+import './AdminDashboardPage.css';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({

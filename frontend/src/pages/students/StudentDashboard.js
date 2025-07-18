@@ -35,11 +35,14 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import axios from 'axios';
-import '../../styles/DashboardPage.css';
+import './StudentDashboardPage.css';
 import { LineChart, BarChart, PieChart } from '../../components/charts';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS, api } from '../../config/api';
 import useAuth from '../../hooks/useAuth';
+import SchoolIcon from '@mui/icons-material/School';
+import AnnouncementIcon from '@mui/icons-material/Announcement';
+import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
 
 // Configure axios with the backend base URL
 // This makes the code more robust when deployed to different environments
@@ -63,6 +66,31 @@ api.interceptors.request.use(
   error => Promise.reject(error)
 );
 */
+
+const mockAssignments = [
+  { id: 1, title: 'OS Lab Report', due: '2024-06-10', course: 'Operating System' },
+  { id: 2, title: 'DAA Quiz', due: '2024-06-12', course: 'Design & Analysis of Algorithm' },
+  { id: 3, title: 'CN Project', due: '2024-06-15', course: 'Computer Network' },
+];
+const mockResources = [
+  { id: 1, name: 'Lecture Notes - OS', link: '#', uploaded: '2024-06-05' },
+  { id: 2, name: 'DAA Slides', link: '#', uploaded: '2024-06-04' },
+  { id: 3, name: 'CN Reference Book', link: '#', uploaded: '2024-06-03' },
+];
+const mockLeaderboard = [
+  { name: 'John Doe', attendance: 98 },
+  { name: 'Jane Smith', attendance: 96 },
+  { name: 'You', attendance: 92 },
+];
+const mockAnnouncements = [
+  { id: 1, title: 'Midterm Exam Schedule Released', date: '2024-06-06' },
+  { id: 2, title: 'New Resource Uploaded: OS Notes', date: '2024-06-05' },
+];
+const mockTips = [
+  'Attend all classes to maximize your learning!',
+  'Review your notes daily for better retention.',
+  'Reach out to your mentor if you need help.',
+];
 
 const StudentDashboard = () => {
   const params = useParams();
@@ -827,6 +855,108 @@ const StudentDashboard = () => {
                       </tbody>
                     </table>
                   </Box>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* --- New Section: Upcoming Assignments --- */}
+            <Grid item xs={12} md={6} lg={4}>
+              <Paper className="dashboard-card" sx={{ bgcolor: '#f5faff' }}>
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                    <AssignmentIcon sx={{ mr: 1 }} /> Upcoming Assignments
+                  </Typography>
+                  <List>
+                    {mockAssignments.map(a => (
+                      <ListItem key={a.id} divider>
+                        <ListItemText
+                          primary={a.title}
+                          secondary={`Due: ${a.due} | Course: ${a.course}`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* --- New Section: Resource Center --- */}
+            <Grid item xs={12} md={6} lg={4}>
+              <Paper className="dashboard-card" sx={{ bgcolor: '#f9f9f9' }}>
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                    <SchoolIcon sx={{ mr: 1 }} /> Resource Center
+                  </Typography>
+                  <List>
+                    {mockResources.map(r => (
+                      <ListItem key={r.id} divider>
+                        <ListItemText
+                          primary={<a href={r.link} target="_blank" rel="noopener noreferrer">{r.name}</a>}
+                          secondary={`Uploaded: ${r.uploaded}`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* --- New Section: Peer Leaderboard --- */}
+            <Grid item xs={12} md={6} lg={4}>
+              <Paper className="dashboard-card" sx={{ bgcolor: '#fff8e1' }}>
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                    <EmojiEventsIcon sx={{ mr: 1 }} /> Peer Leaderboard
+                  </Typography>
+                  <List>
+                    {mockLeaderboard.map((s, idx) => (
+                      <ListItem key={idx} divider>
+                        <ListItemText
+                          primary={`${idx + 1}. ${s.name}`}
+                          secondary={`Attendance: ${s.attendance}%`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* --- New Section: Announcements --- */}
+            <Grid item xs={12} md={6} lg={6}>
+              <Paper className="dashboard-card" sx={{ bgcolor: '#f3f6fd' }}>
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                    <AnnouncementIcon sx={{ mr: 1 }} /> Announcements
+                  </Typography>
+                  <List>
+                    {mockAnnouncements.map(a => (
+                      <ListItem key={a.id} divider>
+                        <ListItemText
+                          primary={a.title}
+                          secondary={a.date}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* --- New Section: Personalized Tips --- */}
+            <Grid item xs={12} md={6} lg={6}>
+              <Paper className="dashboard-card" sx={{ bgcolor: '#e3f2fd' }}>
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                    <EmojiObjectsIcon sx={{ mr: 1 }} /> Personalized Tips
+                  </Typography>
+                  <List>
+                    {mockTips.map((tip, idx) => (
+                      <ListItem key={idx} divider>
+                        <ListItemText primary={tip} />
+                      </ListItem>
+                    ))}
+                  </List>
                 </Box>
               </Paper>
             </Grid>

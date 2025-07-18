@@ -3,7 +3,7 @@ import { Box, Container, Grid, Paper, Typography, CircularProgress, Button } fro
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { api, API_ENDPOINTS } from '../../config/api';
-import '../../styles/DashboardPage.css';
+import './FacultyDashboardPage.css';
 import WarningIcon from '@mui/icons-material/Warning';
 import EmailIcon from '@mui/icons-material/Email';
 

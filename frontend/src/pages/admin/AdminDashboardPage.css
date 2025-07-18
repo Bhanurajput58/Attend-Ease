@@ -1,0 +1,20 @@
+/* Admin-specific dashboard styles */
+.dashboard-container {
+  background: linear-gradient(120deg, #f3e7fa 0%, #e3e3f3 100%);
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+.dashboard-content {
+  padding-top: 2rem;
+}
+.dashboard-card {
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(156, 39, 176, 0.10);
+  background: #faf7fd;
+  transition: box-shadow 0.2s;
+}
+.dashboard-card:hover {
+  box-shadow: 0 4px 24px rgba(156, 39, 176, 0.18);
+}
+
+/* Add more admin-specific styles as needed */ 

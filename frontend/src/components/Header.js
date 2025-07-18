@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { FaUser, FaSignOutAlt, FaHome, FaChartBar, FaCalendarAlt, FaUsers, FaCog, FaFileAlt } from 'react-icons/fa';
@@ -7,11 +7,34 @@ import '../styles/Header.css';
 const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const avatarRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  const handleAvatarClick = () => {
+    setDropdownOpen((prev) => !prev);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (avatarRef.current && !avatarRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   const getNavLinks = () => {
     if (!user) return [];
@@ -20,26 +43,29 @@ const Header = () => {
       case 'student':
         return [
           { path: '/student/dashboard', label: 'Dashboard', icon: <FaHome /> },
-          { path: '/student/attendance', label: 'Attendance', icon: <FaCalendarAlt /> },
-          { path: '/student/profile', label: 'Profile', icon: <FaUser /> }
+          { path: '/student/attendance', label: 'Attendance', icon: <FaCalendarAlt /> }
         ];
       case 'faculty':
         return [
           { path: '/faculty/dashboard', label: 'Dashboard', icon: <FaHome /> },
           { path: '/faculty/attendance', label: 'Take Attendance', icon: <FaCalendarAlt /> },
-          { path: '/reports/attendance', label: 'Reports', icon: <FaFileAlt /> },
-          { path: '/faculty/profile', label: 'Profile', icon: <FaUser /> }
+          { path: '/reports/attendance', label: 'Reports', icon: <FaFileAlt /> }
         ];
       case 'admin':
         return [
           { path: '/admin/dashboard', label: 'Dashboard', icon: <FaHome /> },
           { path: '/admin/users', label: 'Users', icon: <FaUsers /> },
-          { path: '/admin/settings', label: 'Settings', icon: <FaCog /> },
-          { path: '/admin/profile', label: 'Profile', icon: <FaUser /> }
+          { path: '/admin/settings', label: 'Settings', icon: <FaCog /> }
         ];
       default:
         return [];
     }
+  };
+
+  // Helper to get first letter of name
+  const getInitial = (name) => {
+    if (!name) return '';
+    return name.charAt(0).toUpperCase();
   };
 
   return (
@@ -66,14 +92,47 @@ const Header = () => {
               ))}
             </div>
             <div className="navbar-end">
-              <div className="user-info">
-                <span className="user-name">{user?.name}</span>
-                <span className={`user-role ${user?.role}`}>{user?.role}</span>
-              </div>
-              <button onClick={handleLogout} className="logout-button">
-                <FaSignOutAlt className="logout-icon" />
-                <span>Logout</span>
-              </button>
+              {(user.role === 'student' || user.role === 'faculty' || user.role === 'admin') ? (
+                <div className="student-header-avatar-group" ref={avatarRef}>
+                  <span className="student-header-hi">Hi, {user.name}</span>
+                  <div className="student-header-avatar" onClick={handleAvatarClick}>
+                    {getInitial(user.name)}
+                  </div>
+                  {dropdownOpen && (
+                    <div className="student-header-dropdown">
+                      <div
+                        className="student-header-dropdown-item"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          if (user.role === 'student') navigate('/student/profile');
+                          else if (user.role === 'faculty') navigate('/faculty/profile');
+                          else if (user.role === 'admin') navigate('/admin/profile');
+                        }}
+                      >
+                        <FaUser style={{ marginRight: 8 }} /> My Profile
+                      </div>
+                      <div
+                        className="student-header-dropdown-item logout"
+                        onClick={handleLogout}
+                      >
+                        <FaSignOutAlt style={{ marginRight: 8, color: 'red' }} />
+                        <span style={{ color: 'red' }}>Logout</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="user-info">
+                    <span className="user-name">{user?.name}</span>
+                    <span className={`user-role ${user?.role}`}>{user?.role}</span>
+                  </div>
+                  <button onClick={handleLogout} className="logout-button">
+                    <FaSignOutAlt className="logout-icon" />
+                    <span>Logout</span>
+                  </button>
+                </>
+              )}
             </div>
           </>
         ) : (
