@@ -1,77 +1,47 @@
 # AttendEase - Attendance Management System
 
-A full-stack attendance management system with React frontend and Node.js backend.
+A simple full-stack attendance management system with a React frontend and Node.js backend.
+
+**Main Features:**
+- User authentication (login/registration)
+- Role-based dashboards for students, faculty, and admin
+- Attendance tracking and reporting
+- Course and user management
+
+**Tech Stack:**
+- Frontend: React, Material-UI
+- Backend: Node.js, Express, MongoDB
 
 ## Project Structure
 
-```
-AttendEase/
-├── frontend/          # React application
-│   ├── package.json   # Frontend dependencies
-│   ├── src/          # React source code
-│   └── public/       # Static files
-└── backend/          # Node.js server
-    ├── package.json  # Backend dependencies
-    ├── server.js     # Main server file
-    ├── routes/       # API routes
-    ├── controllers/  # Route controllers
-    ├── models/       # Database models
-    └── middleware/   # Express middleware
-```
+- `frontend/` — React app
+- `backend/` — Node.js/Express API
 
-## Getting Started
+## Installation
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
-
-### Installation
-
-1. **Install Frontend Dependencies:**
+1. Install dependencies for both frontend and backend:
    ```bash
-   cd frontend
-   npm install
+   cd frontend && npm install
+   cd ../backend && npm install
    ```
 
-2. **Install Backend Dependencies:**
-   ```bash
-   cd backend
-   npm install
-   ```
+## Running the App
 
-## Running the Application
+- **Frontend:**
+  ```bash
+  cd frontend
+  npm start
+  ```
+  Runs at http://localhost:3000
 
-### Start Frontend Server
-```bash
-cd frontend
-npm run dev
-# or
-npm start
-```
-Frontend will run on: http://localhost:3000
+- **Backend:**
+  ```bash
+  cd backend
+  npm run dev
+  ```
+  Runs at http://localhost:5000
 
-### Start Backend Server
-```bash
-cd backend
-npm run dev
-```
-Backend will run on: http://localhost:5000 (or configured port)
+## Scripts
 
-## Development
-
-- **Frontend**: React with Material-UI components
-- **Backend**: Express.js with MongoDB
-- **Authentication**: JWT tokens
-- **File Handling**: Excel/PDF export capabilities
-
-## Available Scripts
-
-### Frontend (in frontend/ directory)
-- `npm run dev` - Start development server
-- `npm start` - Start development server
-- `npm run build` - Build for production
-- `npm test` - Run tests
-
-### Backend (in backend/ directory)
-- `npm run dev` - Start development server with nodemon
-- `npm start` - Start production server 
+- Frontend: `npm start`, `npm run build`, `npm test`
+- Backend: `npm run dev`, `npm start` 
