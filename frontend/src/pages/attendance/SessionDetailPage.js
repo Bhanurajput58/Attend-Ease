@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useHasRole } from '../../components/RoleBasedAccess';
 import { BarChart, PieChart, LineChart } from '../../components/charts';
-import '../../styles/DashboardPage.css';
 
 const SessionDetailPage = () => {
   const { id } = useParams();

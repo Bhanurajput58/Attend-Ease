@@ -5,7 +5,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../config/api';
-import '../../styles/DashboardPage.css';
 
 const LowAttendancePage = () => {
   const { courseId } = useParams();

@@ -1,4 +1,4 @@
-/* Admin-specific dashboard styles */
+/* Enhanced Admin Dashboard Styles */
 .dashboard-container {
   background: linear-gradient(120deg, #f3e7fa 0%, #e3e3f3 100%);
   min-height: 100vh;
@@ -11,10 +11,147 @@
   border-radius: 18px;
   box-shadow: 0 2px 12px rgba(156, 39, 176, 0.10);
   background: #faf7fd;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 1.5rem;
 }
 .dashboard-card:hover {
   box-shadow: 0 4px 24px rgba(156, 39, 176, 0.18);
+  transform: translateY(-2px) scale(1.01);
 }
 
-/* Add more admin-specific styles as needed */ 
+/* Stat Card Enhancements */
+.dashboard-card .MuiTypography-h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+.dashboard-card .MuiTypography-h6 {
+  font-weight: 600;
+}
+
+/* Chart Card Enhancements */
+.dashboard-card.dashboard-chart-card {
+  padding: 0;
+  background: linear-gradient(135deg, #f0f4ff 0%, #f7f7fb 100%);
+  box-shadow: 0 2px 16px rgba(59, 130, 246, 0.08);
+  border: 1.5px solid #e3e8f0;
+}
+.dashboard-card .recharts-legend-wrapper {
+  padding-top: 10px;
+}
+.dashboard-card .recharts-tooltip-wrapper {
+  z-index: 10;
+}
+.dashboard-card .recharts-bar-rectangle:hover {
+  filter: brightness(1.1) drop-shadow(0 2px 8px #1976d233);
+  cursor: pointer;
+}
+.dashboard-card .recharts-pie-sector:hover {
+  filter: brightness(1.1) drop-shadow(0 2px 8px #0088fe33);
+  cursor: pointer;
+}
+
+/* Tab Styles */
+.MuiTabs-root {
+  margin-bottom: 1.5rem;
+  background: #f7f7fb;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.04);
+}
+.MuiTab-root {
+  font-weight: 600;
+  font-size: 1.1rem;
+  border-radius: 12px 12px 0 0;
+  transition: background 0.2s, color 0.2s;
+}
+.MuiTab-root.Mui-selected {
+  background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+  color: #fff !important;
+}
+
+/* Table Styles */
+.MuiTable-root {
+  background: transparent;
+}
+.MuiTableCell-head {
+  font-weight: bold;
+  background: #f3e7fa;
+  font-size: 1.05rem;
+}
+.MuiTableRow-root:nth-child(even) {
+  background: #f8f9fc;
+}
+.MuiTableRow-root:hover {
+  background: #e0f2fe !important;
+  transition: background 0.2s;
+}
+.table-action-btn {
+  margin-right: 0.25rem;
+  color: #3b82f6;
+  background: #e0e7ff;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+.table-action-btn:hover {
+  background: #3b82f6;
+  color: #fff;
+}
+
+/* Chart Container */
+.dashboard-card .recharts-responsive-container {
+  min-height: 350px;
+}
+
+/* Search and Export Controls */
+.course-management-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.course-management-controls .MuiTextField-root {
+  min-width: 220px;
+  background: #fff;
+  border-radius: 8px;
+}
+.course-management-controls .MuiButton-root {
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px #3b82f61a;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 900px) {
+  .dashboard-card {
+    margin-bottom: 1rem;
+  }
+  .MuiTableCell-root {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-content {
+    padding-top: 0.5rem;
+  }
+  .dashboard-card {
+    padding: 0.5rem;
+  }
+  .MuiTypography-h2 {
+    font-size: 2rem;
+  }
+  .course-management-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+}
+
+/* Snackbar and Alert */
+.MuiSnackbar-root {
+  z-index: 1400;
+}
+.MuiAlert-root {
+  border-radius: 8px;
+  font-size: 1rem;
+} 

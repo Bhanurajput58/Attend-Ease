@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { PieChart } from '../../components/charts';
 import { useHasRole } from '../../components/RoleBasedAccess';
-import '../../styles/DashboardPage.css';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../config/api';
 

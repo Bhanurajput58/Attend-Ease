@@ -175,13 +175,22 @@ app.post('/api/auth/register', async (req, res) => {
     } else if (role === 'faculty' && department) {
       // Create Faculty record
       const Faculty = require('./models/Faculty');
-      roleDoc = await Faculty.create({
-        user: user._id,
-        name,
-        email,
-        department,
-        designation: designation || 'Assistant Professor'
-      });
+      try {
+        roleDoc = await Faculty.create({
+          user: user._id,
+          name,
+          email,
+          department,
+          designation: designation || 'Assistant Professor',
+          employeeId: 'EMP' + Date.now() // Ensures uniqueness
+        });
+      } catch (facultyError) {
+        console.error('Faculty creation error:', facultyError);
+        return res.status(400).json({
+          success: false,
+          message: 'Faculty registration failed: ' + facultyError.message
+        });
+      }
     } else if (role === 'admin') {
       // Create Admin record
       const Admin = require('./models/Admin');
@@ -282,49 +291,14 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       success: true,
-      user: userResponse
+      user: userResponse,
+      token 
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
       message: 'Login failed. Please try again.',
-      error: error.message
-    });
-  }
-});
-
-// Get user profile
-app.get('/api/auth/me', async (req, res) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'No token, authorization denied'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'attend_ease_secret_key_2609');
-    const user = await User.findById(decoded.id).select('-password');
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      user
-    });
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
       error: error.message
     });
   }

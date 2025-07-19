@@ -53,25 +53,6 @@ const facultySchema = new mongoose.Schema({
 
 // Encrypt password before saving
 facultySchema.pre('save', async function(next) {
-  // Always generate employeeId for new faculty
-  if (this.isNew) {
-    const year = new Date().getFullYear().toString().substr(-2);
-    const deptCode = this.department ? this.department.substring(0, 2).toUpperCase() : 'XX';
-    // Find highest existing employee ID
-    const highestFaculty = await this.constructor.findOne(
-      { employeeId: new RegExp('^F' + year + deptCode) },
-      {},
-      { sort: { employeeId: -1 } }
-    );
-    let nextNumber = 1;
-    if (highestFaculty && highestFaculty.employeeId) {
-      const numericPart = parseInt(highestFaculty.employeeId.substring(5));
-      nextNumber = numericPart + 1;
-    }
-    // Create employee ID in format FYYDCNNN (F=faculty, YY=year, DC=dept code, NNN=sequential number)
-    this.employeeId = `F${year}${deptCode}${nextNumber.toString().padStart(3, '0')}`;
-  }
-
   // Only hash password if it is being set/modified
   if (this.isModified('password')) {
     console.log('Hashing password for faculty:', this.email);

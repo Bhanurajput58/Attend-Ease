@@ -97,8 +97,7 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Determine which student to show: own or other
-  const studentId = params.studentId || user?.id;
+  const studentId = params.studentId || user?._id;
 
   // State for student search/selection (for faculty/admin)
   const [selectedStudentId, setSelectedStudentId] = useState(params.studentId || '');
@@ -199,7 +198,7 @@ const StudentDashboard = () => {
 
   // Fetch student data when selectedStudentId or user changes
   useEffect(() => {
-    const idToFetch = params.studentId || (user && user.role === 'student' ? user.id : null);
+    const idToFetch = params.studentId || (user && user.role === 'student' ? user._id : null);
     if (idToFetch) {
       fetchStudentData(idToFetch);
     }
@@ -345,7 +344,7 @@ const StudentDashboard = () => {
       }
 
       // Determine which student's data to fetch
-      const targetStudentId = params.studentId || user.id;
+      const targetStudentId = params.studentId || user._id;
       if (!targetStudentId) {
         setError('Unable to determine student ID');
         return;
@@ -380,7 +379,7 @@ const StudentDashboard = () => {
   
   const handleSubmitAbsenceRequest = async () => {
     try {
-      const userStudentId = localStorage.getItem('userId') || user?.id;
+      const userStudentId = localStorage.getItem('userId') || user?._id;
       
       if (!userStudentId) {
         alert('No student ID available. Please log in again.');
@@ -423,7 +422,7 @@ const StudentDashboard = () => {
   // Handle export report
   const handleExportReport = async () => {
     try {
-      const currentStudentId = localStorage.getItem('userId') || user?.id;
+      const currentStudentId = localStorage.getItem('userId') || user?._id;
       
       if (!currentStudentId) {
         alert('No student ID available. Please log in again.');
@@ -462,7 +461,7 @@ const StudentDashboard = () => {
 
   // Refresh handler for attendance data
   const handleRefresh = () => {
-    const idToFetch = params.studentId || (user && user.role === 'student' ? user.id : null);
+    const idToFetch = params.studentId || (user && user.role === 'student' ? user._id : null);
     if (idToFetch) {
       fetchStudentData(idToFetch);
     }

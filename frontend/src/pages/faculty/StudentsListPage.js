@@ -21,7 +21,6 @@ import useAuth from '../../hooks/useAuth';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../config/api';
 import API_BASE_URL from '../../config/api';
-import '../../styles/DashboardPage.css';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
 

@@ -9,14 +9,13 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('student');
-  const [department, setDepartment] = useState('Computer Science');
-  const [semester, setSemester] = useState('1');
-  const [designation, setDesignation] = useState('Assistant Professor');
-  const [school, setSchool] = useState('');
+  const [department, setDepartment] = useState('');
+  const [designation, setDesignation] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showError, setShowError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   
   const { register, isAuthenticated, error, loading } = useAuth();
   const navigate = useNavigate();
@@ -60,7 +59,7 @@ const RegisterPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (!name || !email || !password || !confirmPassword || !role || !school) {
+    if (!name || !email || !password || !confirmPassword || !role) {
       showErrorMessageFn('Please fill in all fields');
       setIsSubmitting(false);
       return;
@@ -90,17 +89,19 @@ const RegisterPage = () => {
         email,
         password,
         role,
-        school,
         department: role === 'student' || role === 'faculty' ? department : undefined,
-        semester: role === 'student' ? semester : undefined,
         designation: role === 'faculty' ? designation : undefined
       };
       
       const success = await register(userData);
       
       if (success) {
-        alert(`Registration successful as ${role}! Please log in to continue.`);
-        navigate('/login');
+        setSuccessMessage(`Registration successful as ${role}! Please log in to continue.`);
+        setTimeout(() => {
+          setSuccessMessage('');
+          navigate('/login');
+        }, 2500);
+        return;
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -108,11 +109,6 @@ const RegisterPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleSocialLogin = (provider) => {
-    // Implement social login logic here
-    console.log(`Login with ${provider}`);
   };
 
   const departments = [
@@ -125,6 +121,17 @@ const RegisterPage = () => {
     'Chemical Engineering',
     'Biotechnology'
   ];
+
+  // Helper to check if the form is valid
+  const isFormValid = () => {
+    if (!name || !email || !password || !confirmPassword || !role) return false;
+    if (role === 'student' || role === 'faculty') {
+      if (!department) return false;
+    }
+    if (role === 'faculty' && !designation) return false;
+    if (!agreeToTerms) return false;
+    return true;
+  };
 
   return (
     <div className="register-page">
@@ -139,23 +146,18 @@ const RegisterPage = () => {
                   <circle cx="140" cy="120" r="25" fill="#ffa726"/>
                   <rect x="115" y="145" width="50" height="80" fill="#424242"/>
                   <rect x="120" y="150" width="40" height="60" fill="#fff" stroke="#e0e0e0" strokeWidth="2"/>
-                  
                   {/* Laptop screen with elements */}
                   <rect x="125" y="155" width="30" height="20" fill="#2196f3"/>
                   <rect x="125" y="178" width="15" height="4" fill="#4caf50"/>
                   <rect x="125" y="185" width="20" height="4" fill="#ff9800"/>
                   <rect x="125" y="192" width="25" height="4" fill="#9c27b0"/>
-                  
                   {/* Circular tech elements */}
                   <circle cx="320" cy="80" r="40" fill="#e8f5e8" stroke="#4caf50" strokeWidth="2"/>
                   <path d="M300 80 L320 60 L340 80 L320 100 Z" fill="#4caf50"/>
-                  
                   <circle cx="80" cy="200" r="35" fill="#fff3e0" stroke="#ff9800" strokeWidth="2"/>
                   <rect x="65" y="185" width="30" height="30" fill="#ff9800" opacity="0.3"/>
-                  
                   <circle cx="300" cy="200" r="30" fill="#f3e5f5" stroke="#9c27b0" strokeWidth="2"/>
                   <circle cx="300" cy="200" r="15" fill="#9c27b0"/>
-                  
                   {/* Connecting lines */}
                   <path d="M140 120 Q200 80 280 80" stroke="#e0e0e0" strokeWidth="2" fill="none"/>
                   <path d="M140 180 Q200 200 270 200" stroke="#e0e0e0" strokeWidth="2" fill="none"/>
@@ -209,6 +211,12 @@ const RegisterPage = () => {
                 </div>
               )}
 
+              {successMessage && (
+                <div className="register-toast-success">
+                  {successMessage}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="register-form">
                 <div className="register-form-group">
                   <input
@@ -254,17 +262,6 @@ const RegisterPage = () => {
                   />
                 </div>
 
-                <div className="register-form-group">
-                  <input
-                    type="text"
-                    placeholder="School/College *"
-                    value={school}
-                    onChange={(e) => setSchool(e.target.value)}
-                    required
-                    disabled={isSubmitting || loading}
-                  />
-                </div>
-
                 {/* Role-specific fields */}
                 {(role === 'student' || role === 'faculty') && (
                   <div className="register-form-group">
@@ -274,23 +271,9 @@ const RegisterPage = () => {
                       required
                       disabled={isSubmitting || loading}
                     >
+                      <option value="" disabled hidden>Select Department *</option>
                       {departments.map((dept) => (
                         <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {role === 'student' && (
-                  <div className="register-form-group">
-                    <select
-                      value={semester}
-                      onChange={(e) => setSemester(e.target.value)}
-                      required
-                      disabled={isSubmitting || loading}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                        <option key={sem} value={sem.toString()}>Semester {sem}</option>
                       ))}
                     </select>
                   </div>
@@ -304,6 +287,7 @@ const RegisterPage = () => {
                       required
                       disabled={isSubmitting || loading}
                     >
+                      <option value="" disabled hidden>Select Designation *</option>
                       <option value="Assistant Professor">Assistant Professor</option>
                       <option value="Associate Professor">Associate Professor</option>
                       <option value="Professor">Professor</option>
@@ -328,41 +312,11 @@ const RegisterPage = () => {
                 <button 
                   type="submit" 
                   className="create-account-btn"
-                  disabled={isSubmitting || loading}
+                  disabled={isSubmitting || loading || !isFormValid()}
                 >
                   {isSubmitting || loading ? 'Creating Account...' : 'CREATE ACCOUNT'}
                 </button>
               </form>
-
-              <div className="social-login">
-                <p>Or continue with</p>
-                <div className="social-buttons">
-                  <button 
-                    className="social-btn google"
-                    onClick={() => handleSocialLogin('google')}
-                    type="button"
-                  >
-                    <span className="social-icon">G</span>
-                    GOOGLE
-                  </button>
-                  <button 
-                    className="social-btn facebook"
-                    onClick={() => handleSocialLogin('facebook')}
-                    type="button"
-                  >
-                    <span className="social-icon">f</span>
-                    FACEBOOK
-                  </button>
-                  <button 
-                    className="social-btn github"
-                    onClick={() => handleSocialLogin('github')}
-                    type="button"
-                  >
-                    <span className="social-icon">⚡</span>
-                    GITHUB
-                  </button>
-                </div>
-              </div>
 
               <div className="signin-link">
                 <p>Already have an account? <Link to="/login">Sign in</Link></p>

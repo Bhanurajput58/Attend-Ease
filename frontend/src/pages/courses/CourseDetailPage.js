@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { BarChart, PieChart } from '../../components/charts';
-import '../../styles/DashboardPage.css';
 
 const CourseDetailPage = () => {
   const { id } = useParams();

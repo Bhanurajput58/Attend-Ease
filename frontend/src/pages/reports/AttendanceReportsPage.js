@@ -9,7 +9,6 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InfoIcon from '@mui/icons-material/Info';
-import '../../styles/DashboardPage.css';
 import useAuth from '../../hooks/useAuth';
 import { API_ENDPOINTS } from '../../config/api';
 import API_BASE_URL from '../../config/api';

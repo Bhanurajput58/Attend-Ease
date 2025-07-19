@@ -52,13 +52,14 @@ export const AuthProvider = ({ children }) => {
         throw new Error(response.data.message || 'Login failed');
       }
 
-      const { user } = response.data;
+      const { user, token } = response.data;
       
-      if (!user) {
+      if (!user || !token) {
         throw new Error('Invalid response format from server');
       }
       
-      // No need to store token in localStorage as it's in HTTP-only cookie
+      // Store the token for future requests
+      localStorage.setItem('token', token);
       setUser(user);
       setIsAuthenticated(true);
       return user;
@@ -105,6 +106,8 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
+      // Remove token from storage
+      localStorage.removeItem('token');
       // Clear local state regardless of API call success
       setUser(null);
       setIsAuthenticated(false);

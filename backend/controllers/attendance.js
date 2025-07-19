@@ -8,9 +8,7 @@ const path = require('path');
 const { format } = require('date-fns');
 const os = require('os');
 
-// @desc    Create attendance record for a course
-// @route   POST /api/attendance
-// @access  Private/Faculty,Admin
+
 exports.createAttendance = async (req, res) => {
   try {
     console.log('Creating attendance with data:', req.body);
@@ -18,7 +16,7 @@ exports.createAttendance = async (req, res) => {
     
     const { course, date, students } = req.body;
     
-    // Check if course ID is valid MongoDB ObjectId format
+    // Checking if course ID is valid MongoDB ObjectId format
     const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(course)) {
       console.error('Invalid course ID format:', course);
@@ -366,7 +364,16 @@ exports.getStudentAttendance = async (req, res) => {
     
     // First, find the student to get all courses they're enrolled in
     const ImportedStudent = require('../models/ImportedStudent');
-    const student = await ImportedStudent.findById(studentId);
+    const User = require('../models/User');
+    let student = await ImportedStudent.findById(studentId);
+    let foundInUser = false;
+    if (!student) {
+      // Try fallback to User collection
+      student = await User.findById(studentId);
+      if (student) {
+        foundInUser = true;
+      }
+    }
     
     if (!student) {
       return res.status(404).json({
@@ -375,10 +382,13 @@ exports.getStudentAttendance = async (req, res) => {
       });
     }
     
-    // Get all courses the student is enrolled in
-    const courses = await Course.find({
-      _id: { $in: student.courses }
-    }).select('_id courseName courseCode faculty instructor');
+    // Get all courses the student is enrolled in (if found in ImportedStudent)
+    let courses = [];
+    if (!foundInUser) {
+      courses = await Course.find({
+        _id: { $in: student.courses }
+      }).select('_id courseName courseCode faculty instructor');
+    }
     
     console.log(`Found ${courses.length} courses for student ${studentId}`);
     
@@ -395,18 +405,20 @@ exports.getStudentAttendance = async (req, res) => {
     let totalPresent = 0;
     let totalClasses = 0;
     
-    // First add all courses the student is enrolled in
-    for (const course of courses) {
-      const courseId = course._id.toString();
-      courseStats.set(courseId, {
-        id: courseId,
-        name: course.courseName || course.courseCode,
-        code: course.courseCode,
-        present: 0,
-        absent: 0,
-        total: 0,
-        faculty: course.faculty?.name || 'N/A'
-      });
+    // First add all courses the student is enrolled in (if found in ImportedStudent)
+    if (!foundInUser) {
+      for (const course of courses) {
+        const courseId = course._id.toString();
+        courseStats.set(courseId, {
+          id: courseId,
+          name: course.courseName || course.courseCode,
+          code: course.courseCode,
+          present: 0,
+          absent: 0,
+          total: 0,
+          faculty: course.faculty?.name || 'N/A'
+        });
+      }
     }
     
     // Then update with attendance data

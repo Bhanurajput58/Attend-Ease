@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { useHasRole } from '../../components/RoleBasedAccess';
 import { BarChart } from '../../components/charts';
-import '../../styles/DashboardPage.css';
 
 const TakeAttendancePage = () => {
   
