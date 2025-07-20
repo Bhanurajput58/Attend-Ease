@@ -215,6 +215,13 @@ const ProfilePage = () => {
           {authUser.role === 'faculty' && (
             <>
               <h2>Faculty Details</h2>
+              <div style={{ marginBottom: '12px' }}>
+                <strong>Status:</strong> {profile.approved ? (
+                  <span className="faculty-approved-badge">Approved</span>
+                ) : (
+                  <span className="faculty-not-approved-badge">Not Approved</span>
+                )}
+              </div>
               <div><strong>Department:</strong> {profile.department || 'N/A'}</div>
               <div><strong>Designation:</strong> {profile.designation || 'N/A'}</div>
               <div><strong>Employee ID:</strong> {profile.employeeId || 'N/A'}</div>

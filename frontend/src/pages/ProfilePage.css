@@ -171,3 +171,23 @@
   overflow-y: auto;
   padding-right: 8px;
 } 
+.faculty-approved-badge {
+  display: inline-block;
+  background: #4caf50;
+  color: #fff;
+  font-weight: 600;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 0.98rem;
+  margin-left: 8px;
+}
+.faculty-not-approved-badge {
+  display: inline-block;
+  background: #f44336;
+  color: #fff;
+  font-weight: 600;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 0.98rem;
+  margin-left: 8px;
+} 
