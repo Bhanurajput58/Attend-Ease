@@ -22,6 +22,7 @@ router.route('/')
 router.route('/:id')
   .get(getUser)
   .put(updateUser)
+  .patch(updateUser)
   .delete(deleteUser);
 
 module.exports = router; 

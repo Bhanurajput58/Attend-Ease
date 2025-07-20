@@ -37,6 +37,9 @@ import '../../styles/AttendancePage.css';
 
 const AttendanceManager = () => {
   const { user } = useAuth();
+  // Approval logic
+  const isFaculty = user?.role === 'faculty';
+  const isApproved = user?.approved === true;
   const [selectedClass, setSelectedClass] = useState('');
   const [courseId, setCourseId] = useState('');
   const [students, setStudents] = useState([]);
@@ -700,6 +703,12 @@ const AttendanceManager = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
+        {/* Show error if faculty is not approved */}
+        {isFaculty && !isApproved && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Your account is <strong>not approved</strong> yet. You cannot take attendance until approved by admin.
+          </Alert>
+        )}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" gutterBottom>
             Manage Attendance
@@ -710,7 +719,7 @@ const AttendanceManager = () => {
               color="error"
               startIcon={<DeleteOutline />}
               onClick={handleClearStudentsConfirm}
-              disabled={!courseId || students.length === 0}
+              disabled={!courseId || students.length === 0 || (isFaculty && !isApproved)}
             >
               Clear Students
             </Button>
@@ -719,6 +728,7 @@ const AttendanceManager = () => {
               color="primary" 
               startIcon={<CloudUpload />}
               onClick={handleImportDialogOpen}
+              disabled={isFaculty && !isApproved}
             >
               Import Students
             </Button>
@@ -737,6 +747,7 @@ const AttendanceManager = () => {
               }}
               displayEmpty
               label="Select a Course"
+              disabled={isFaculty && !isApproved}
             >
               <MenuItem value="">
                 <em>Select a Course</em>
@@ -807,6 +818,7 @@ const AttendanceManager = () => {
                       color={student.status === 'Present' ? 'error' : 'success'}
                       size="small"
                       onClick={() => handleStatusChange(student.id)}
+                      disabled={isFaculty && !isApproved}
                     >
                       {student.status === 'Present' ? 'Mark Absent' : 'Mark Present'}
                     </Button>
@@ -823,7 +835,7 @@ const AttendanceManager = () => {
             color="primary"
             startIcon={<Save />}
             onClick={saveAttendance}
-            disabled={isSaving || !courseId || students.length === 0}
+            disabled={isSaving || !courseId || students.length === 0 || (isFaculty && !isApproved)}
           >
             {isSaving ? (
               <>
@@ -856,6 +868,7 @@ const AttendanceManager = () => {
                       value={columnMappings.name}
                       onChange={(e) => setColumnMappings({...columnMappings, name: e.target.value})}
                       label="Student Name Column"
+                      disabled={isFaculty && !isApproved}
                     >
                       {availableColumns.map(column => (
                         <MenuItem key={column} value={column}>
@@ -873,6 +886,7 @@ const AttendanceManager = () => {
                       value={columnMappings.rollNumber}
                       onChange={(e) => setColumnMappings({...columnMappings, rollNumber: e.target.value})}
                       label="Roll Number Column"
+                      disabled={isFaculty && !isApproved}
                     >
                       {availableColumns.map(column => (
                         <MenuItem key={column} value={column}>
@@ -890,6 +904,7 @@ const AttendanceManager = () => {
                       value={columnMappings.discipline}
                       onChange={(e) => setColumnMappings({...columnMappings, discipline: e.target.value})}
                       label="Discipline/Department Column (Optional)"
+                      disabled={isFaculty && !isApproved}
                     >
                       <MenuItem value="">
                         <em>None</em>
@@ -1001,7 +1016,7 @@ const AttendanceManager = () => {
                 onClick={applyColumnMappings} 
                 variant="contained" 
                 color="primary"
-                disabled={!columnMappings.name || !columnMappings.rollNumber}
+                disabled={!columnMappings.name || !columnMappings.rollNumber || (isFaculty && !isApproved)}
               >
                 Apply Mapping
               </Button>
@@ -1009,7 +1024,7 @@ const AttendanceManager = () => {
                 onClick={handleImportStudents} 
                 variant="contained" 
                 color="success"
-                disabled={importedData.length === 0}
+                disabled={importedData.length === 0 || (isFaculty && !isApproved)}
               >
                 Import Students
               </Button>
@@ -1086,6 +1101,7 @@ const AttendanceManager = () => {
                   value={editFormData.name}
                   onChange={handleEditFormChange}
                   required
+                  disabled={isFaculty && !isApproved}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -1096,6 +1112,7 @@ const AttendanceManager = () => {
                   value={editFormData.rollNumber}
                   onChange={handleEditFormChange}
                   required
+                  disabled={isFaculty && !isApproved}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -1105,6 +1122,7 @@ const AttendanceManager = () => {
                   name="discipline"
                   value={editFormData.discipline}
                   onChange={handleEditFormChange}
+                  disabled={isFaculty && !isApproved}
                 />
               </Grid>
             </Grid>
@@ -1112,7 +1130,9 @@ const AttendanceManager = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditDialogClose}>Cancel</Button>
-          <Button onClick={handleSaveStudentEdit} variant="contained" color="primary">
+          <Button onClick={handleSaveStudentEdit} variant="contained" color="primary"
+            disabled={isFaculty && !isApproved}
+          >
             Save
           </Button>
         </DialogActions>

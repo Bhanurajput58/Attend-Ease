@@ -11,149 +11,73 @@ const User = require('./models/User');
 const logger = require('./middleware/logger');
 const cookieParser = require('cookie-parser');
 
-// Load env vars
 dotenv.config();
-
-// Initialize express app
 const app = express();
 
-// Connect to database
 connectDB()
   .then(() => {
     console.log('MongoDB Connected:', mongoose.connection.host);
-    
-    // Create demo courses if they don't exist
-    const setupDemoCourses = async () => {
+    // Setup demo courses if needed
+    (async () => {
       try {
         const Course = require('./models/Course');
         const User = require('./models/User');
-        
-        // Find a faculty user
         const facultyUser = await User.findOne({ role: 'faculty' });
-        
-        if (!facultyUser) {
-          console.log('No faculty user found to set up demo courses');
-          return;
-        }
-        
-        // Demo course data
+        if (!facultyUser) return;
         const demoCourses = [
           { id: "65f12abd0f70dab6a2876304", name: "Operating systems", code: "CS2006", semester: "4", department: "CSE" },
           { id: "65f12abd0f70dab6a2876305", name: "Design & Analysis of Algorithms", code: "CS2007", semester: "4", department: "CSE" },
           { id: "65f12abd0f70dab6a2876306", name: "Computer Network", code: "CS2008", semester: "4", department: "CSE" },
           { id: "65f12abd0f70dab6a2876307", name: "IoT and Embedded systems", code: "CS2009", semester: "4", department: "CSE" }
         ];
-        
-        // Create each demo course if it doesn't exist
         for (const course of demoCourses) {
-          try {
-            const existingCourse = await Course.findById(course.id);
-            
-            if (!existingCourse) {
-              await Course.create({
-                _id: course.id,
-                courseCode: course.code,
-                courseName: course.name,
-                faculty: facultyUser._id,
-                semester: course.semester,
-                department: course.department,
-                students: []
-              });
-              console.log(`Created demo course: ${course.name}`);
-            }
-          } catch (err) {
-            console.error(`Error creating demo course ${course.name}:`, err.message);
+          const existingCourse = await Course.findById(course.id);
+          if (!existingCourse) {
+            await Course.create({ _id: course.id, courseCode: course.code, courseName: course.name, faculty: facultyUser._id, semester: course.semester, department: course.department, students: [] });
           }
         }
-        
-        console.log('Demo course setup completed');
-      } catch (err) {
-        console.error('Error setting up demo courses:', err);
-      }
-    };
-    
-    // Call the setup function
-    setupDemoCourses();
+      } catch {}
+    })();
   })
-  .catch(err => {
-    console.error('Database connection error:', err.message);
-    process.exit(1);
-  });
+  .catch(err => { console.error('Database connection error:', err.message); process.exit(1); });
 
-// Middleware
 app.use(cors({
   origin: ['http://localhost:3000', 'https://your-production-domain.com'],
-  credentials: true, // Allow cookies to be sent across domains
-  exposedHeaders: ['Content-Disposition'], // Important for file downloads
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  exposedHeaders: ['Content-Disposition'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 app.use(express.json());
-app.use(cookieParser()); // Add cookie parser middleware
+app.use(cookieParser());
 app.use(morgan('dev'));
 app.use(logger);
 
-// Debug middleware to log all requests
+// Log all requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log('Request headers:', req.headers);
-  console.log('Request body:', req.body);
   next();
 });
 
-// API Status endpoint - Place this before other routes
 app.get('/api/status', (req, res) => {
-    console.log('Status endpoint hit');
-    res.json({ 
-        status: 'online',
-        timestamp: new Date().toISOString(),
-        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-    });
+  res.json({ status: 'online', timestamp: new Date().toISOString(), database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
 });
 
-// Simple ping endpoint for testing
 app.get('/api/ping', (req, res) => {
-    console.log('Ping endpoint hit');
-    res.json({ 
-        message: 'pong',
-        timestamp: new Date().toISOString()
-    });
+  res.json({ message: 'pong', timestamp: new Date().toISOString() });
 });
 
-// Auth Routes
+// Auth Register
 app.post('/api/auth/register', async (req, res) => {
   try {
-    console.log('Register request received:', req.body);
     const { name, email, password, role, department, semester, designation } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email already registered'
-      });
-    }
-
-    // Create username from email
+    if (await User.findOne({ email })) return res.status(400).json({ success: false, message: 'Email already registered' });
     const username = email.split('@')[0];
-
-    // Create new user
-    const user = new User({
-      name,
-      email,
-      password, // Will be hashed by pre-save hook
-      role,
-      username
-    });
+    const user = new User({ name, email, password, role, username });
     await user.save();
-    console.log('User saved:', user);
-
     let roleDoc = null;
     if (role === 'student' && department && semester) {
-      // Create Student record
       const Student = require('./models/Student');
-      // Generate roll number (YYDCNNN)
       const year = new Date().getFullYear().toString().substr(-2);
       const deptCode = department.substring(0, 2).toUpperCase();
       const highestStudent = await Student.findOne({ rollNumber: new RegExp('^' + year + deptCode) }, {}, { sort: { rollNumber: -1 } });
@@ -163,157 +87,54 @@ app.post('/api/auth/register', async (req, res) => {
         nextNumber = numericPart + 1;
       }
       const rollNumber = `${year}${deptCode}${nextNumber.toString().padStart(3, '0')}`;
-      roleDoc = await Student.create({
-        user: user._id,
-        name,
-        email,
-        password, // Will be hashed by Student model
-        department,
-        semester,
-        rollNumber
-      });
+      roleDoc = await Student.create({ user: user._id, name, email, password, department, semester, rollNumber });
     } else if (role === 'faculty' && department) {
-      // Create Faculty record
       const Faculty = require('./models/Faculty');
       try {
-        roleDoc = await Faculty.create({
-          user: user._id,
-          name,
-          email,
-          department,
-          designation: designation || 'Assistant Professor',
-          employeeId: 'EMP' + Date.now() // Ensures uniqueness
-        });
+        roleDoc = await Faculty.create({ user: user._id, name, email, department, designation: designation || 'Assistant Professor', employeeId: 'EMP' + Date.now() });
       } catch (facultyError) {
-        console.error('Faculty creation error:', facultyError);
-        return res.status(400).json({
-          success: false,
-          message: 'Faculty registration failed: ' + facultyError.message
-        });
+        return res.status(400).json({ success: false, message: 'Faculty registration failed: ' + facultyError.message });
       }
     } else if (role === 'admin') {
-      // Create Admin record
       const Admin = require('./models/Admin');
-      roleDoc = await Admin.create({
-        user: user._id,
-        name,
-        email,
-        // adminId will be generated by pre-save hook
-        designation: designation || 'Administrator'
-      });
+      roleDoc = await Admin.create({ user: user._id, name, email, designation: designation || 'Administrator' });
     }
-
-    // Create token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'attend_ease_secret_key_2609',
-      { expiresIn: '24h' }
-    );
-
-    // Remove password from response
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'attend_ease_secret_key_2609', { expiresIn: '24h' });
     const userResponse = user.toObject();
     delete userResponse.password;
-
-    // Add role-specific data to the response
     userResponse.roleSpecificData = roleDoc;
-
-    res.status(201).json({
-      success: true,
-      token,
-      user: userResponse
-    });
+    res.status(201).json({ success: true, token, user: userResponse });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Registration failed. Please try again.',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Registration failed. Please try again.', error: error.message });
   }
 });
 
+// Auth Login
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password, role: selectedRole } = req.body;
-
-    console.log('Login attempt for email:', email, 'with role:', selectedRole);
-
-    // Find user by email
     const user = await User.findOne({ email }).select('+password');
-
-    if (!user) {
-      console.log('User not found with email:', email);
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials or role'
-      });
-    }
-
-    // Check password
+    if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials or role' });
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      console.log('Password does not match for user:', email);
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials or role'
-      });
-    }
-
-    // Check if selected role matches user's actual role
-    if (!selectedRole || user.role !== selectedRole) {
-      console.log(`Role mismatch: user role is ${user.role}, selected role is ${selectedRole}`);
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials or role'
-      });
-    }
-
-    // Create token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'attend_ease_secret_key_2609',
-      { expiresIn: '24h' }
-    );
-
-    // Remove password from response
+    if (!isMatch) return res.status(401).json({ success: false, message: 'Invalid credentials or role' });
+    if (!selectedRole || user.role !== selectedRole) return res.status(401).json({ success: false, message: 'Invalid credentials or role' });
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'attend_ease_secret_key_2609', { expiresIn: '24h' });
     const userResponse = user.toObject();
     delete userResponse.password;
-
-    console.log('Login successful for user:', email);
-
-    // Set JWT as HTTP-only cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // true in production
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'strict'
-    });
-
-    res.json({
-      success: true,
-      user: userResponse,
-      token 
-    });
+    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000, sameSite: 'strict' });
+    res.json({ success: true, user: userResponse, token });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Login failed. Please try again.',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Login failed. Please try again.', error: error.message });
   }
 });
 
-// Logout endpoint to clear the cookie
+// Logout
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie('token');
-  return res.status(200).json({
-    success: true,
-    message: 'Logged out successfully'
-  });
+  return res.status(200).json({ success: true, message: 'Logged out successfully' });
 });
 
-// Define routes
+// API routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/courses', require('./routes/courses'));
@@ -324,7 +145,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/faculties', require('./routes/faculties'));
 app.use('/api/admins', require('./routes/admins'));
 
-// API Routes with both with and without /api prefix for backwards compatibility
+// Also mount routes without /api prefix
 const authRoutes = require('./routes/auth');
 const attendanceRoutes = require('./routes/attendance');
 const studentsRoutes = require('./routes/students');
@@ -332,8 +153,6 @@ const facultyRoutes = require('./routes/faculty');
 const adminRoutes = require('./routes/admin');
 const facultiesRoutes = require('./routes/faculties');
 const adminsRoutes = require('./routes/admins');
-
-// Mount routes both with and without /api prefix
 ['/api', ''].forEach(prefix => {
   app.use(`${prefix}/auth`, authRoutes);
   app.use(`${prefix}/attendance`, attendanceRoutes);
@@ -344,51 +163,27 @@ const adminsRoutes = require('./routes/admins');
   app.use(`${prefix}/admins`, adminsRoutes);
 });
 
-// Default route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Attend-Ease API' });
 });
 
-// API health check endpoint
 app.get('/api', (req, res) => {
-  res.json({ 
-    status: 'online',
-    message: 'API is running',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'online', message: 'API is running', timestamp: new Date().toISOString() });
 });
 
-// Test endpoint for database connection
 app.get('/api/test-db', async (req, res) => {
   try {
     const count = await User.countDocuments();
-    res.json({
-      success: true,
-      message: 'Database connected',
-      userCount: count
-    });
+    res.json({ success: true, message: 'Database connected', userCount: count });
   } catch (error) {
-    console.error('Database test error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Database connection error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: 'Database connection error', error: error.message });
   }
 });
 
-// Error handling middleware
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('Global error handler caught:', err);
-  res.status(500).json({
-    success: false,
-    message: 'Server error',
-    error: err.message
-  });
+  res.status(500).json({ success: false, message: 'Server error', error: err.message });
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => { console.log(`Server running on port ${PORT}`); });

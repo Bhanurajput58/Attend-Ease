@@ -64,6 +64,7 @@ export const API_ENDPOINTS = {
     GET_STUDENT_ASSIGNMENTS: (id) => `${API_BASE_URL}/api/students/${id}/assignments`,
     GET_STUDENTS_BY_COURSE: (courseId) => `${API_BASE_URL}/api/students/course/${courseId}`,
     GET_ALL_STUDENTS: `${API_BASE_URL}/api/students`,
+    GET_STUDENT_BY_USER_ID: (userId) => `${API_BASE_URL}/api/students/by-user/${userId}`,
     
     // Faculty endpoints
     GET_FACULTY_DASHBOARD: `${API_BASE_URL}/api/faculty/dashboard`,
@@ -71,6 +72,7 @@ export const API_ENDPOINTS = {
     GET_FACULTY_STUDENTS: `${API_BASE_URL}/api/faculty/students`,
     TAKE_ATTENDANCE: `${API_BASE_URL}/api/attendance`,
     GET_LOW_ATTENDANCE: (courseId) => `${API_BASE_URL}/api/faculty/low-attendance/${courseId}`,
+    UPDATE_FACULTY: (id) => `${API_BASE_URL}/api/faculties/${id}`,
     
     // Admin endpoints
     GET_ADMIN_DASHBOARD: `${API_BASE_URL}/api/admin/dashboard`,
