@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
+import axios from 'axios';
+import { API_ENDPOINTS } from '../../config/api';
 
 const CourseListPage = () => {
   const { user } = useAuth();
@@ -12,6 +14,9 @@ const CourseListPage = () => {
     semester: 'all',
     status: 'all'
   });
+  const [appliedCourses, setAppliedCourses] = useState([]); // course ids
+  const [applyLoading, setApplyLoading] = useState(''); // course id or ''
+  const [applyMessage, setApplyMessage] = useState('');
   
   // Mock data
   const mockCourses = [
@@ -202,6 +207,25 @@ const CourseListPage = () => {
     }
   };
 
+  const handleApply = async (courseId) => {
+    setApplyLoading(courseId);
+    setApplyMessage('');
+    try {
+      const res = await axios.post(`/api/courses/${courseId}/apply`, {}, { withCredentials: true });
+      if (res.data.success) {
+        setAppliedCourses(prev => [...prev, courseId]);
+        setApplyMessage('Applied successfully!');
+      } else {
+        setApplyMessage(res.data.message || 'Failed to apply.');
+      }
+    } catch (err) {
+      setApplyMessage(err.response?.data?.message || 'Failed to apply.');
+    } finally {
+      setApplyLoading('');
+      setTimeout(() => setApplyMessage(''), 3000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container">
@@ -355,7 +379,23 @@ const CourseListPage = () => {
               <Link to={`/attendance/course/${course.id}`} className="attendance-button">
                 Attendance
               </Link>
+              {user && user.role === 'faculty' && (
+                <button
+                  className="apply-button"
+                  disabled={appliedCourses.includes(course.id) || applyLoading === course.id}
+                  onClick={() => handleApply(course.id)}
+                >
+                  {appliedCourses.includes(course.id)
+                    ? 'Applied'
+                    : applyLoading === course.id
+                      ? 'Applying...'
+                      : 'Apply'}
+                </button>
+              )}
             </div>
+            {applyMessage && applyLoading === '' && (
+              <div className="apply-message">{applyMessage}</div>
+            )}
           </div>
         ))}
       </div>

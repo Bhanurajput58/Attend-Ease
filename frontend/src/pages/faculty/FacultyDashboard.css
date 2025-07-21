@@ -1,0 +1,122 @@
+/* Faculty-specific dashboard styles */
+.dashboard-container {
+  background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+.dashboard-content {
+  padding-top: 2rem;
+}
+.dashboard-card {
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(33, 150, 243, 0.10);
+  background: #f7fafd;
+  transition: box-shadow 0.2s;
+}
+.dashboard-card:hover {
+  box-shadow: 0 4px 24px rgba(33, 150, 243, 0.18);
+}
+
+.dashboard-header {
+  margin-top: 32px;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dashboard-header-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.attendance-indicator {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  background-color: #eee;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.attendance-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.status-excellent {
+  background-color: #4caf50;
+}
+.status-good {
+  background-color: #2196f3;
+}
+.status-average {
+  background-color: #ff9800;
+}
+.status-poor {
+  background-color: #f44336;
+}
+.attendance-indicator-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #000;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 1;
+}
+
+.paper-course {
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  transition: box-shadow 0.2s;
+}
+.paper-course:hover {
+  box-shadow: 0 4px 24px rgba(33, 150, 243, 0.18);
+}
+.paper-course-content {
+  margin-bottom: 8px;
+}
+.paper-course-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.centered-box {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+.text-center {
+  text-align: center;
+}
+.mt-1 {
+  margin-top: 8px;
+}
+.mb-2 {
+  margin-bottom: 16px;
+}
+.p-4 {
+  padding: 32px;
+}
+.p-3 {
+  padding: 24px;
+}
+.p-2 {
+  padding: 16px;
+}
+.bg-paper {
+  background-color: #fff;
+}
+.border-radius-2 {
+  border-radius: 16px;
+}
+
+/* Add more faculty-specific styles as needed */ 

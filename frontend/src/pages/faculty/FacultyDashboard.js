@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container, Grid, Paper, Typography, CircularProgress, Button } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom';
+import { Container, Grid, Paper, Typography, CircularProgress, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { api, API_ENDPOINTS } from '../../config/api';
-import './FacultyDashboardPage.css';
+import './FacultyDashboard.css';
 import WarningIcon from '@mui/icons-material/Warning';
-import EmailIcon from '@mui/icons-material/Email';
 
-/**
- * Faculty Dashboard Component
- * Displays faculty information, course data, and attendance overview
- */
 const FacultyDashboard = () => {
   const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -24,69 +19,17 @@ const FacultyDashboard = () => {
     facultyName: 'Faculty Member'
   });
   const [error, setError] = useState(null);
-  
+  const [appliedCourses, setAppliedCourses] = useState([]);
+  const [applyLoading, setApplyLoading] = useState({});
+  const [applyError, setApplyError] = useState({});
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        console.log('Fetching faculty dashboard data');
-        
-        // Use the configured api instance
         const response = await api.get(API_ENDPOINTS.GET_FACULTY_DASHBOARD);
-        
-        console.log('Dashboard API response:', response.data);
-        
-        // Check if the response is just an API status message rather than actual data
-        if (response.data && response.data.status === 'online' && response.data.message === 'API is running') {
-          console.log('API is online but returned status message instead of data, using mock data');
-          
-          // Use mock data as fallback
-          const mockDashboardData = {
-            activeCourses: 3,
-            totalStudents: 45,
-            averageAttendance: 87,
-            recentActivity: [
-              {
-                id: 'mock1',
-                date: new Date().toISOString(),
-                course: { id: 'c1', name: 'Operating Systems', code: 'CS2006' },
-                studentsPresent: 28,
-                studentsAbsent: 4,
-                totalStudents: 32,
-                percentage: 87.5
-              },
-              {
-                id: 'mock2',
-                date: new Date(Date.now() - 86400000).toISOString(), // yesterday
-                course: { id: 'c2', name: 'Design & Analysis of Algorithm', code: 'CS2007' },
-                studentsPresent: 25,
-                studentsAbsent: 3,
-                totalStudents: 28,
-                percentage: 89.3
-              }
-            ],
-            coursesList: [
-              { id: 'c1', name: 'Operating Systems', code: 'CS2006' },
-              { id: 'c2', name: 'Design & Analysis of Algorithm', code: 'CS2007' },
-              { id: 'c3', name: 'Computer Networks', code: 'CS2008' }
-            ]
-          };
-          
-          setDashboardData({
-            ...mockDashboardData,
-            facultyName: user?.name || 'Faculty Member'
-          });
-          
-          setError('Backend returned API status instead of dashboard data. Using mock data.');
-          return;
-        }
-        
         if (response.data.success && response.data.data) {
-          // Check if coursesList exists in the response
-          console.log('Courses list from API:', response.data.data.coursesList || 'No courses data provided');
-          
           setDashboardData({
             activeCourses: response.data.data.activeCourses || 0,
             totalStudents: response.data.data.totalStudents || 0,
@@ -96,143 +39,80 @@ const FacultyDashboard = () => {
             facultyName: user?.name || 'Faculty Member'
           });
         } else {
-          console.error('Invalid response format:', response.data);
-          
-          // Use mock data as fallback
-          const mockDashboardData = {
-            activeCourses: 3,
-            totalStudents: 45,
-            averageAttendance: 87,
-            recentActivity: [
-              {
-                id: 'mock1',
-                date: new Date().toISOString(),
-                course: { id: 'c1', name: 'Operating Systems', code: 'CS2006' },
-                studentsPresent: 28,
-                studentsAbsent: 4,
-                totalStudents: 32,
-                percentage: 87.5
-              },
-              {
-                id: 'mock2',
-                date: new Date(Date.now() - 86400000).toISOString(), // yesterday
-                course: { id: 'c2', name: 'Design & Analysis of Algorithm', code: 'CS2007' },
-                studentsPresent: 25,
-                studentsAbsent: 3,
-                totalStudents: 28,
-                percentage: 89.3
-              }
-            ],
-            coursesList: [
-              { id: 'c1', name: 'Operating Systems', code: 'CS2006' },
-              { id: 'c2', name: 'Design & Analysis of Algorithm', code: 'CS2007' },
-              { id: 'c3', name: 'Computer Networks', code: 'CS2008' }
-            ]
-          };
-          
           setDashboardData({
-            ...mockDashboardData,
+            activeCourses: 0,
+            totalStudents: 0,
+            averageAttendance: 0,
+            recentActivity: [],
+            coursesList: [],
             facultyName: user?.name || 'Faculty Member'
           });
-          
-          setError('Failed to load dashboard data. Using mock data instead.');
+          setError('Failed to load dashboard data.');
         }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        
-        // Use mock data as fallback
-        const mockDashboardData = {
-          activeCourses: 3,
-          totalStudents: 45,
-          averageAttendance: 87,
-          recentActivity: [
-            {
-              id: 'mock1',
-              date: new Date().toISOString(),
-              course: { id: 'c1', name: 'Operating Systems', code: 'CS2006' },
-              studentsPresent: 28,
-              studentsAbsent: 4,
-              totalStudents: 32,
-              percentage: 87.5
-            },
-            {
-              id: 'mock2',
-              date: new Date(Date.now() - 86400000).toISOString(), // yesterday
-              course: { id: 'c2', name: 'Design & Analysis of Algorithm', code: 'CS2007' },
-              studentsPresent: 25,
-              studentsAbsent: 3,
-              totalStudents: 28,
-              percentage: 89.3
-            }
-          ],
-          coursesList: [
-            { id: 'c1', name: 'Operating Systems', code: 'CS2006' },
-            { id: 'c2', name: 'Design & Analysis of Algorithm', code: 'CS2007' },
-            { id: 'c3', name: 'Computer Networks', code: 'CS2008' }
-          ]
-        };
-        
         setDashboardData({
-          ...mockDashboardData,
+          activeCourses: 0,
+          totalStudents: 0,
+          averageAttendance: 0,
+          recentActivity: [],
+          coursesList: [],
           facultyName: user?.name || 'Faculty Member'
         });
-        
-        setError('Error connecting to server. Using mock data instead.');
+        setError('Error connecting to server.');
       } finally {
         setLoading(false);
       }
     };
-
-    if (isAuthenticated) {
-      fetchDashboardData();
-    } else {
-      navigate('/login');
-    }
+    if (isAuthenticated) fetchDashboardData();
+    else navigate('/login');
   }, [isAuthenticated, navigate, user?.name]);
 
-  const handleTakeAttendance = () => {
-    navigate('/faculty/attendance');
-  };
-
-  const viewAttendanceHistory = (activityId) => {
-    console.log('Viewing attendance details for activity:', activityId);
-    
-    // Find the activity data by ID
-    const activity = dashboardData.recentActivity.find(act => act.id === activityId);
-    
-    if (activity) {
-      // Store the selected activity data in session storage
+  // Fetch applied courses for this faculty
+  useEffect(() => {
+    const fetchAppliedCourses = async () => {
       try {
-        sessionStorage.setItem('selectedActivity', JSON.stringify(activity));
-        console.log('Stored activity in session storage:', activity);
-      } catch (error) {
-        console.error('Error storing activity data:', error);
-      }
-    }
-    
-    // Navigate to the attendance detail page with the activity ID
+        const response = await api.get('/api/faculty/applied-courses');
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setAppliedCourses(response.data.data.map(app => app.course));
+        }
+      } catch {}
+    };
+    if (isAuthenticated) fetchAppliedCourses();
+  }, [isAuthenticated]);
+
+  const handleTakeAttendance = () => navigate('/faculty/attendance');
+  const viewAttendanceHistory = (activityId) => {
+    const activity = dashboardData.recentActivity.find(act => act.id === activityId);
+    if (activity) sessionStorage.setItem('selectedActivity', JSON.stringify(activity));
     navigate(`/faculty/attendance/${activityId}`);
   };
-  
-  const handleViewReports = () => {
-    navigate('/reports/attendance');
-  };
+  const handleViewReports = () => navigate('/reports/attendance');
+  const viewLowAttendance = (courseId) => navigate(`/faculty/low-attendance/${courseId}`);
+  const handleViewAllStudents = () => navigate('/faculty/students');
 
-  const viewLowAttendance = (courseId) => {
-    console.log('Viewing low attendance for course:', courseId);
-    navigate(`/faculty/low-attendance/${courseId}`);
-  };
-
-  const handleViewAllStudents = () => {
-    console.log('Viewing all students');
-    navigate('/faculty/students');
+  // Handler for applying to a course
+  const handleApply = async (courseId) => {
+    setApplyLoading(prev => ({ ...prev, [courseId]: true }));
+    setApplyError(prev => ({ ...prev, [courseId]: null }));
+    try {
+      const response = await api.post(`/api/courses/${courseId}/apply`);
+      if (response.data.success) {
+        setAppliedCourses(prev => [...prev, courseId]);
+      } else {
+        setApplyError(prev => ({ ...prev, [courseId]: response.data.message || 'Failed to apply' }));
+      }
+    } catch (err) {
+      setApplyError(prev => ({ ...prev, [courseId]: 'Failed to apply' }));
+    } finally {
+      setApplyLoading(prev => ({ ...prev, [courseId]: false }));
+    }
   };
 
   return (
     <div className="dashboard-container">
       <div className="dashboard-content">
         <Container maxWidth="lg">
-          <Box sx={{ mt: 4, mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="dashboard-header">
             <div>
               <Typography variant="h4" component="h1" gutterBottom>
                 Faculty Dashboard
@@ -244,7 +124,7 @@ const FacultyDashboard = () => {
                 Manage your courses and student attendance
               </Typography>
             </div>
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <div className="dashboard-header-actions">
               <Button 
                 variant="outlined" 
                 color="primary" 
@@ -261,22 +141,22 @@ const FacultyDashboard = () => {
               >
                 Take Attendance
               </Button>
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <div className="centered-box">
               <CircularProgress />
-            </Box>
+            </div>
           ) : error ? (
-            <Box sx={{ textAlign: 'center', my: 4, color: 'error.main' }}>
+            <div className="text-center mb-2" style={{ color: 'red' }}>
               <Typography variant="h6">{error}</Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Using mock data instead
+              <Typography variant="body2" className="mt-1">
+                No data available
               </Typography>
-            </Box>
+            </div>
           ) : dashboardData.activeCourses === 0 ? (
-            <Box sx={{ textAlign: 'center', my: 4, p: 4, bgcolor: 'background.paper', borderRadius: 2 }}>
+            <div className="text-center p-4 bg-paper border-radius-2">
               <WarningIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
               <Typography variant="h5" gutterBottom>
                 No Courses Assigned
@@ -287,13 +167,12 @@ const FacultyDashboard = () => {
               <Typography variant="body2" color="text.secondary">
                 Please contact your administrator to get courses assigned to your account.
               </Typography>
-            </Box>
+            </div>
           ) : (
             <Grid container spacing={3}>
-              {/* Overview Card */}
               <Grid item xs={12} md={6} lg={4}>
                 <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
+                  <div className="p-2">
                     <Typography variant="h6" gutterBottom>
                       Overview
                     </Typography>
@@ -303,21 +182,20 @@ const FacultyDashboard = () => {
                     <Typography variant="body2" color="text.secondary">
                       Active courses
                     </Typography>
-                  </Box>
+                    <div style={{ minHeight: 32 }} /> {/* Placeholder for future overview data */}
+                  </div>
                 </Paper>
               </Grid>
-
-              {/* Students Card */}
               <Grid item xs={12} md={6} lg={4}>
                 <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
+                  <div className="p-2">
                     <Typography variant="h6" gutterBottom>
                       Students
                     </Typography>
                     <Typography variant="h3" color="primary">
                       {dashboardData.totalStudents}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" className="mb-2">
                       Total students
                     </Typography>
                     <Button 
@@ -329,14 +207,13 @@ const FacultyDashboard = () => {
                     >
                       View All Students
                     </Button>
-                  </Box>
+                    <div style={{ minHeight: 32 }} /> {/* Placeholder for future students data */}
+                  </div>
                 </Paper>
               </Grid>
-
-              {/* Attendance Card */}
               <Grid item xs={12} md={6} lg={4}>
                 <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
+                  <div className="p-2">
                     <Typography variant="h6" gutterBottom>
                       Attendance Rate
                     </Typography>
@@ -346,48 +223,53 @@ const FacultyDashboard = () => {
                     <Typography variant="body2" color="text.secondary">
                       Average attendance rate
                     </Typography>
-                  </Box>
+                    <div style={{ minHeight: 32 }} /> {/* Placeholder for future attendance data */}
+                  </div>
                 </Paper>
               </Grid>
-
-              {/* Courses Section */}
               <Grid item xs={12}>
                 <Paper className="dashboard-card">
-                  <Box sx={{ p: 3 }}>
+                  <div className="p-3">
                     <Typography variant="h6" gutterBottom>
                       Courses
                     </Typography>
-                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid container spacing={2} className="mt-1">
                       {dashboardData.coursesList.length === 0 ? (
                         <Grid item xs={12}>
                           <Typography variant="body2" color="text.secondary">
                             No courses assigned yet.
                           </Typography>
+                          <div style={{ minHeight: 32 }} /> {/* Placeholder for future courses data */}
                         </Grid>
                       ) : (
                         dashboardData.coursesList.map((course) => (
                           <Grid item xs={12} sm={6} md={4} key={course.id}>
-                            <Paper
-                              elevation={2}
-                              sx={{
-                                p: 2,
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                borderRadius: 2,
-                                '&:hover': {
-                                  boxShadow: 4,
-                                },
-                              }}
-                            >
-                              <Box sx={{ mb: 1 }}>
+                            <Paper elevation={2} className="paper-course">
+                              <div className="paper-course-content">
                                 <Typography variant="h6">{course.name}</Typography>
                                 <Typography variant="body2" color="text.secondary">
                                   {course.code}
                                 </Typography>
-                              </Box>
-
-                              <Box sx={{ mt: 'auto', display: 'flex', gap: 1, pt: 1 }}>
+                              </div>
+                              <div className="paper-course-actions">
+                                {/* Show Apply button if not already applied or assigned */}
+                                {!appliedCourses.includes(course.id) && !course.instructor && (
+                                  <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="small"
+                                    onClick={() => handleApply(course.id)}
+                                    disabled={applyLoading[course.id]}
+                                  >
+                                    {applyLoading[course.id] ? 'Applying...' : 'Apply'}
+                                  </Button>
+                                )}
+                                {appliedCourses.includes(course.id) && !course.instructor && (
+                                  <Typography variant="body2" color="success.main">Applied</Typography>
+                                )}
+                                {course.instructor && (
+                                  <Typography variant="body2" color="primary">Assigned</Typography>
+                                )}
                                 <Button 
                                   variant="outlined"
                                   size="small"
@@ -404,24 +286,26 @@ const FacultyDashboard = () => {
                                 >
                                   Low Attendance
                                 </Button>
-                              </Box>
+                              </div>
+                              {applyError[course.id] && (
+                                <Typography variant="body2" color="error">{applyError[course.id]}</Typography>
+                              )}
+                              <div style={{ minHeight: 24 }} /> {/* Placeholder for future course card data */}
                             </Paper>
                           </Grid>
                         ))
                       )}
                     </Grid>
-                  </Box>
+                  </div>
                 </Paper>
               </Grid>
-
-              {/* Recent Activity Table */}
               <Grid item xs={12}>
                 <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
+                  <div className="p-2">
                     <Typography variant="h6" gutterBottom>
                       Recent Attendance Activity
                     </Typography>
-                    <Box sx={{ overflowX: 'auto' }}>
+                    <div style={{ overflowX: 'auto' }}>
                       <table className="attendance-table">
                         <thead>
                           <tr>
@@ -439,39 +323,21 @@ const FacultyDashboard = () => {
                                 <td>{activity.date}</td>
                                 <td>{activity.course}</td>
                                 <td>{activity.studentsPresent}</td>
-                                
                                 <td>
-                                  <div className="attendance-indicator" style={{ position: 'relative', width: '100%', height: '24px', backgroundColor: '#eee', borderRadius: '12px', overflow: 'hidden' }}>
+                                  <div className="attendance-indicator">
                                     <div 
                                       className={`attendance-bar ${
                                         activity.attendanceRate >= 90 ? 'status-excellent' :
                                         activity.attendanceRate >= 80 ? 'status-good' :
                                         activity.attendanceRate >= 70 ? 'status-average' : 'status-poor'
                                       }`}
-                                      style={{ 
-                                        position: 'absolute',
-                                        left: 0,
-                                        top: 0,
-                                        height: '100%',
-                                        width: `${activity.attendanceRate}%`,
-                                        transition: 'width 0.3s ease'
-                                      }}
+                                      style={{ width: `${activity.attendanceRate}%` }}
                                     ></div>
-                                    <span style={{
-                                      position: 'absolute',
-                                      left: '50%',
-                                      top: '50%',
-                                      transform: 'translate(-50%, -50%)',
-                                      color: '#000',
-                                      fontSize: '0.875rem',
-                                      fontWeight: 500,
-                                      zIndex: 1
-                                    }}>
+                                    <span className="attendance-indicator-label">
                                       {activity.attendanceRate}%
                                     </span>
                                   </div>
                                 </td>
-                                
                                 <td className="action-buttons">
                                   <button 
                                     className="action-button" 
@@ -489,15 +355,16 @@ const FacultyDashboard = () => {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="5" style={{ textAlign: 'center' }}>
+                              <td colSpan="5" className="text-center">
                                 No recent activity found
+                                <div style={{ minHeight: 32 }} /> {/* Placeholder for future activity data */}
                               </td>
                             </tr>
                           )}
                         </tbody>
                       </table>
-                    </Box>
-                  </Box>
+                    </div>
+                  </div>
                 </Paper>
               </Grid>
             </Grid>

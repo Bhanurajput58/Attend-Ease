@@ -54,6 +54,7 @@ const Header = () => {
       case 'admin':
         return [
           { path: '/admin/dashboard', label: 'Dashboard', icon: <FaHome /> },
+          { path: '/admin/courses', label: 'Courses', icon: <FaCalendarAlt /> },
           { path: '/admin/users', label: 'Users', icon: <FaUsers /> },
           { path: '/admin/settings', label: 'Settings', icon: <FaCog /> }
         ];
