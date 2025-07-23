@@ -7,7 +7,8 @@ const {
   deleteCourse,
   addStudentToCourse,
   getCourseStudents,
-  deleteAllStudentsFromCourse
+  deleteAllStudentsFromCourse,
+  getAvailableCourses
 } = require('../controllers/courses');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -31,5 +32,8 @@ router.route('/:id/students')
   .post(authorize('admin', 'faculty'), addStudentToCourse)
   .get(getCourseStudents)
   .delete(authorize('admin', 'faculty'), deleteAllStudentsFromCourse);
+
+// Route to get all available (unassigned) courses
+router.get('/available', authorize('faculty', 'admin'), getAvailableCourses);
 
 module.exports = router; 

@@ -22,6 +22,7 @@ const FacultyDashboard = () => {
   const [appliedCourses, setAppliedCourses] = useState([]);
   const [applyLoading, setApplyLoading] = useState({});
   const [applyError, setApplyError] = useState({});
+  const [availableCourses, setAvailableCourses] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -78,6 +79,19 @@ const FacultyDashboard = () => {
       } catch {}
     };
     if (isAuthenticated) fetchAppliedCourses();
+  }, [isAuthenticated]);
+
+  // Fetch available (unassigned) courses
+  useEffect(() => {
+    const fetchAvailableCourses = async () => {
+      try {
+        const response = await api.get('/api/courses/available');
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setAvailableCourses(response.data.data);
+        }
+      } catch {}
+    };
+    if (isAuthenticated) fetchAvailableCourses();
   }, [isAuthenticated]);
 
   const handleTakeAttendance = () => navigate('/faculty/attendance');
@@ -299,75 +313,51 @@ const FacultyDashboard = () => {
                   </div>
                 </Paper>
               </Grid>
-              <Grid item xs={12}>
-                <Paper className="dashboard-card">
-                  <div className="p-2">
-                    <Typography variant="h6" gutterBottom>
-                      Recent Attendance Activity
-                    </Typography>
-                    <div style={{ overflowX: 'auto' }}>
-                      <table className="attendance-table">
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Course</th>
-                            <th>Students Present</th>
-                            <th>Attendance Rate</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dashboardData.recentActivity.length > 0 ? (
-                            dashboardData.recentActivity.map((activity) => (
-                              <tr key={activity.id}>
-                                <td>{activity.date}</td>
-                                <td>{activity.course}</td>
-                                <td>{activity.studentsPresent}</td>
-                                <td>
-                                  <div className="attendance-indicator">
-                                    <div 
-                                      className={`attendance-bar ${
-                                        activity.attendanceRate >= 90 ? 'status-excellent' :
-                                        activity.attendanceRate >= 80 ? 'status-good' :
-                                        activity.attendanceRate >= 70 ? 'status-average' : 'status-poor'
-                                      }`}
-                                      style={{ width: `${activity.attendanceRate}%` }}
-                                    ></div>
-                                    <span className="attendance-indicator-label">
-                                      {activity.attendanceRate}%
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="action-buttons">
-                                  <button 
-                                    className="action-button" 
-                                    onClick={() => viewAttendanceHistory(activity.id)}
-                                    aria-label={`View attendance details for ${activity.course} on ${activity.date}`}
-                                    title={`View attendance details for ${activity.course}`}
-                                  >
-                                    View Details
-                                  </button>
-                                  <button className="action-button edit" onClick={() => navigate(`/faculty/attendance/edit/${activity.id}`)}>
-                                    Edit
-                                  </button>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="5" className="text-center">
-                                No recent activity found
-                                <div style={{ minHeight: 32 }} /> {/* Placeholder for future activity data */}
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </Paper>
-              </Grid>
             </Grid>
+          )}
+
+          {/* Always show available courses section, even if no assigned courses */}
+          {availableCourses.length > 0 && (
+            <Paper className="dashboard-card" style={{ marginTop: 32 }}>
+              <div className="p-3">
+                <Typography variant="h6" gutterBottom>
+                  Available Courses to Apply
+                </Typography>
+                <Grid container spacing={2} className="mt-1">
+                  {availableCourses.map((course) => (
+                    <Grid item xs={12} sm={6} md={4} key={course._id}>
+                      <Paper elevation={1} className="paper-course">
+                        <div className="paper-course-content">
+                          <Typography variant="h6">{course.courseName}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {course.courseCode} | {course.department} | Semester {course.semester}
+                          </Typography>
+                        </div>
+                        <div className="paper-course-actions">
+                          {!appliedCourses.includes(course._id) ? (
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              size="small"
+                              onClick={() => handleApply(course._id)}
+                              disabled={applyLoading[course._id]}
+                            >
+                              {applyLoading[course._id] ? 'Applying...' : 'Apply'}
+                            </Button>
+                          ) : (
+                            <Typography variant="body2" color="success.main">Applied</Typography>
+                          )}
+                        </div>
+                        {applyError[course._id] && (
+                          <Typography variant="body2" color="error">{applyError[course._id]}</Typography>
+                        )}
+                        <div style={{ minHeight: 24 }} />
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </div>
+            </Paper>
           )}
         </Container>
       </div>

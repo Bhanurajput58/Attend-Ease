@@ -330,3 +330,16 @@ exports.deleteAllStudentsFromCourse = async (req, res) => {
     });
   }
 }; 
+
+// @desc    Get all available (unassigned) courses
+// @route   GET /api/courses/available
+// @access  Private (faculty)
+exports.getAvailableCourses = async (req, res) => {
+  try {
+    // Return all courses, regardless of instructor
+    const courses = await Course.find().select('_id courseName courseCode department semester');
+    res.json({ success: true, data: courses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+}; 
