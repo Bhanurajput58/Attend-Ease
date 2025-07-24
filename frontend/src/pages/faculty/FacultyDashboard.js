@@ -85,7 +85,8 @@ const FacultyDashboard = () => {
   useEffect(() => {
     const fetchAvailableCourses = async () => {
       try {
-        const response = await api.get('/api/courses/available');
+        // Fetch only courses with assigned: false
+        const response = await api.get('/api/courses?assigned=false');
         if (response.data.success && Array.isArray(response.data.data)) {
           setAvailableCourses(response.data.data);
         }
@@ -169,19 +170,6 @@ const FacultyDashboard = () => {
                 No data available
               </Typography>
             </div>
-          ) : dashboardData.activeCourses === 0 ? (
-            <div className="text-center p-4 bg-paper border-radius-2">
-              <WarningIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
-              <Typography variant="h5" gutterBottom>
-                No Courses Assigned
-              </Typography>
-              <Typography variant="body1" color="text.secondary" paragraph>
-                {dashboardData.message || 'You currently don\'t have any courses assigned to you.'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Please contact your administrator to get courses assigned to your account.
-              </Typography>
-            </div>
           ) : (
             <Grid container spacing={3}>
               <Grid item xs={12} md={6} lg={4}>
@@ -196,7 +184,7 @@ const FacultyDashboard = () => {
                     <Typography variant="body2" color="text.secondary">
                       Active courses
                     </Typography>
-                    <div style={{ minHeight: 32 }} /> {/* Placeholder for future overview data */}
+                    <div style={{ minHeight: 32 }} /> {/* Empty */}
                   </div>
                 </Paper>
               </Grid>
@@ -221,7 +209,7 @@ const FacultyDashboard = () => {
                     >
                       View All Students
                     </Button>
-                    <div style={{ minHeight: 32 }} /> {/* Placeholder for future students data */}
+                    <div style={{ minHeight: 32 }} /> {/* Empty */}
                   </div>
                 </Paper>
               </Grid>
@@ -237,7 +225,7 @@ const FacultyDashboard = () => {
                     <Typography variant="body2" color="text.secondary">
                       Average attendance rate
                     </Typography>
-                    <div style={{ minHeight: 32 }} /> {/* Placeholder for future attendance data */}
+                    <div style={{ minHeight: 32 }} /> {/* Empty */}
                   </div>
                 </Paper>
               </Grid>
@@ -253,7 +241,7 @@ const FacultyDashboard = () => {
                           <Typography variant="body2" color="text.secondary">
                             No courses assigned yet.
                           </Typography>
-                          <div style={{ minHeight: 32 }} /> {/* Placeholder for future courses data */}
+                          <div style={{ minHeight: 32 }} /> {/* Empty */}
                         </Grid>
                       ) : (
                         dashboardData.coursesList.map((course) => (
@@ -304,7 +292,7 @@ const FacultyDashboard = () => {
                               {applyError[course.id] && (
                                 <Typography variant="body2" color="error">{applyError[course.id]}</Typography>
                               )}
-                              <div style={{ minHeight: 24 }} /> {/* Placeholder for future course card data */}
+                              <div style={{ minHeight: 24 }} /> {/* Empty */}
                             </Paper>
                           </Grid>
                         ))
@@ -316,49 +304,53 @@ const FacultyDashboard = () => {
             </Grid>
           )}
 
-          {/* Always show available courses section, even if no assigned courses */}
-          {availableCourses.length > 0 && (
-            <Paper className="dashboard-card" style={{ marginTop: 32 }}>
-              <div className="p-3">
-                <Typography variant="h6" gutterBottom>
-                  Available Courses to Apply
+          {/* Always show available courses section, even if no available courses */}
+          <Paper className="dashboard-card" style={{ marginTop: 32 }}>
+            <div className="p-3">
+              <Typography variant="h6" gutterBottom>
+                Available Courses to Apply
+              </Typography>
+              {availableCourses.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No available courses to apply at the moment.
                 </Typography>
+              ) : (
                 <Grid container spacing={2} className="mt-1">
                   {availableCourses.map((course) => (
-                    <Grid item xs={12} sm={6} md={4} key={course._id}>
+                    <Grid item xs={12} sm={6} md={4} key={course._id || course.id}>
                       <Paper elevation={1} className="paper-course">
                         <div className="paper-course-content">
-                          <Typography variant="h6">{course.courseName}</Typography>
+                          <Typography variant="h6">{course.courseName || course.name}</Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {course.courseCode} | {course.department} | Semester {course.semester}
+                            {(course.courseCode || course.code) + (course.department ? ` | ${course.department}` : '') + (course.semester ? ` | Semester ${course.semester}` : '')}
                           </Typography>
                         </div>
                         <div className="paper-course-actions">
-                          {!appliedCourses.includes(course._id) ? (
+                          {!appliedCourses.includes(course._id || course.id) ? (
                             <Button
                               variant="contained"
                               color="primary"
                               size="small"
-                              onClick={() => handleApply(course._id)}
-                              disabled={applyLoading[course._id]}
+                              onClick={() => handleApply(course._id || course.id)}
+                              disabled={applyLoading[course._id || course.id]}
                             >
-                              {applyLoading[course._id] ? 'Applying...' : 'Apply'}
+                              {applyLoading[course._id || course.id] ? 'Applying...' : 'Apply'}
                             </Button>
                           ) : (
                             <Typography variant="body2" color="success.main">Applied</Typography>
                           )}
                         </div>
-                        {applyError[course._id] && (
-                          <Typography variant="body2" color="error">{applyError[course._id]}</Typography>
+                        {applyError[course._id || course.id] && (
+                          <Typography variant="body2" color="error">{applyError[course._id || course.id]}</Typography>
                         )}
                         <div style={{ minHeight: 24 }} />
                       </Paper>
                     </Grid>
                   ))}
                 </Grid>
-              </div>
-            </Paper>
-          )}
+              )}
+            </div>
+          </Paper>
         </Container>
       </div>
     </div>

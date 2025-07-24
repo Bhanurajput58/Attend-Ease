@@ -61,7 +61,13 @@ const CourseList = () => {
         try {
           const response = await axios.get(`/api/courses/${course._id}/applications`, { withCredentials: true });
           if (response.data.success && Array.isArray(response.data.data)) {
-            applications[course._id] = response.data.data.map(app => app.faculty);
+            // Use denormalized fields from CourseApplication
+            applications[course._id] = response.data.data.map(app => ({
+              id: app._id,
+              name: app.facultyName || app.faculty?.name || '',
+              email: app.facultyEmail || app.faculty?.email || '',
+              department: app.facultyDepartment || app.faculty?.department || '',
+            }));
           } else {
             applications[course._id] = [];
           }
@@ -180,8 +186,10 @@ const CourseList = () => {
                       {applicants.length === 0 ? (
                         <Typography variant="body2" color="textSecondary">No applications yet</Typography>
                       ) : (
-                        applicants.map(faculty => (
-                          <Typography key={faculty._id} variant="body2">{faculty.name} ({faculty.email})</Typography>
+                        applicants.map(applicant => (
+                          <Typography key={applicant.id} variant="body2">
+                            {applicant.name} ({applicant.email}){applicant.department ? ` | ${applicant.department}` : ''}
+                          </Typography>
                         ))
                       )}
                     </Box>
@@ -209,8 +217,8 @@ const CourseList = () => {
               onChange={e => setSelectedFaculty(e.target.value)}
             >
               {(selectedCourse && courseApplications[selectedCourse._id] && courseApplications[selectedCourse._id].length > 0)
-                ? courseApplications[selectedCourse._id].map(faculty => (
-                  <MenuItem key={faculty._id} value={faculty._id}>{faculty.name} ({faculty.email})</MenuItem>
+                ? courseApplications[selectedCourse._id].map(applicant => (
+                  <MenuItem key={applicant.id} value={applicant.id}>{applicant.name} ({applicant.email}){applicant.department ? ` | ${applicant.department}` : ''}</MenuItem>
                 ))
                 : <MenuItem value="" disabled>No applicants</MenuItem>
               }

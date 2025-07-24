@@ -19,7 +19,11 @@ const courseApplicationSchema = new mongoose.Schema({
   appliedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  facultyName: String,
+  facultyEmail: String,
+  facultyDepartment: String,
+  courseName: String,
 });
 
 courseApplicationSchema.index({ course: 1, faculty: 1 }, { unique: true });

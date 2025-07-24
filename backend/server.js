@@ -10,6 +10,7 @@ require('dotenv').config();
 const User = require('./models/User');
 const logger = require('./middleware/logger');
 const cookieParser = require('cookie-parser');
+const courseApplicationsRoutes = require('./routes/courseApplications');
 
 dotenv.config();
 const app = express();
@@ -137,6 +138,7 @@ app.post('/api/auth/logout', (req, res) => {
 // API routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api', courseApplicationsRoutes);
 app.use('/api/courses', require('./routes/courses'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/students'));

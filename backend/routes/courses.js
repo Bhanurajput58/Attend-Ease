@@ -11,16 +11,17 @@ const {
   getAvailableCourses
 } = require('../controllers/courses');
 const { protect, authorize } = require('../middleware/auth');
+const courseApplicationsRoutes = require('./courseApplications');
 
 const router = express.Router();
-
-// All routes below this point are protected and require authentication
 router.use(protect);
 
 // Base routes
 router.route('/')
   .get(getCourses)
   .post(authorize('admin', 'faculty'), createCourse);
+
+router.use('/', courseApplicationsRoutes);
 
 router.route('/:id')
   .get(getCourse)
