@@ -21,7 +21,7 @@ router.route('/')
   .get(getCourses)
   .post(authorize('admin', 'faculty'), createCourse);
 
-router.use('/', courseApplicationsRoutes);
+router.use('/:id/applications', courseApplicationsRoutes);
 
 router.route('/:id')
   .get(getCourse)

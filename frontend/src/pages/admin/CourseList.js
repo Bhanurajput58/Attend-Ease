@@ -61,13 +61,8 @@ const CourseList = () => {
         try {
           const response = await axios.get(`/api/courses/${course._id}/applications`, { withCredentials: true });
           if (response.data.success && Array.isArray(response.data.data)) {
-            // Use denormalized fields from CourseApplication
-            applications[course._id] = response.data.data.map(app => ({
-              id: app._id,
-              name: app.facultyName || app.faculty?.name || '',
-              email: app.facultyEmail || app.faculty?.email || '',
-              department: app.facultyDepartment || app.faculty?.department || '',
-            }));
+            // Store the full application objects
+            applications[course._id] = response.data.data;
           } else {
             applications[course._id] = [];
           }
@@ -172,6 +167,8 @@ const CourseList = () => {
         <Grid container spacing={3}>
           {filteredCourses.map((course) => {
             const applicants = courseApplications[course._id] || [];
+            // Only pending applicants for enabling the button
+            const pendingApplicants = applicants.filter(applicant => applicant.status === 'pending');
             return (
               <Grid item xs={12} sm={6} md={4} key={course._id}>
                 <Card>
@@ -187,15 +184,24 @@ const CourseList = () => {
                         <Typography variant="body2" color="textSecondary">No applications yet</Typography>
                       ) : (
                         applicants.map(applicant => (
-                          <Typography key={applicant.id} variant="body2">
-                            {applicant.name} ({applicant.email}){applicant.department ? ` | ${applicant.department}` : ''}
-                          </Typography>
+                          <Box key={applicant._id} sx={{ mb: 1, p: 1, border: '1px solid #eee', borderRadius: 1 }}>
+                            <Typography variant="body2"><b>Name:</b> {applicant.facultyName || applicant.faculty?.name}</Typography>
+                            <Typography variant="body2"><b>Email:</b> {applicant.facultyEmail || applicant.faculty?.email}</Typography>
+                            <Typography variant="body2"><b>Department:</b> {applicant.facultyDepartment || applicant.faculty?.department}</Typography>
+                            {applicant.faculty?.designation && (
+                              <Typography variant="body2"><b>Designation:</b> {applicant.faculty.designation}</Typography>
+                            )}
+                            <Typography variant="body2"><b>Status:</b> {applicant.status}</Typography>
+                            {applicant.createdAt && (
+                              <Typography variant="body2"><b>Applied At:</b> {new Date(applicant.createdAt).toLocaleString()}</Typography>
+                            )}
+                          </Box>
                         ))
                       )}
                     </Box>
                   </CardContent>
                   <CardActions>
-                    <Button size="small" variant="outlined" onClick={() => handleOpenAssignDialog(course)} disabled={applicants.length === 0}>
+                    <Button size="small" variant="outlined" onClick={() => handleOpenAssignDialog(course)} disabled={pendingApplicants.length === 0}>
                       Assign Faculty
                     </Button>
                   </CardActions>
@@ -218,7 +224,10 @@ const CourseList = () => {
             >
               {(selectedCourse && courseApplications[selectedCourse._id] && courseApplications[selectedCourse._id].length > 0)
                 ? courseApplications[selectedCourse._id].map(applicant => (
-                  <MenuItem key={applicant.id} value={applicant.id}>{applicant.name} ({applicant.email}){applicant.department ? ` | ${applicant.department}` : ''}</MenuItem>
+                  <MenuItem key={applicant._id} value={applicant.faculty?._id || applicant.faculty}>
+                    {applicant.facultyName || applicant.faculty?.name} ({applicant.facultyEmail || applicant.faculty?.email})
+                    {applicant.facultyDepartment || applicant.faculty?.department ? ` | ${applicant.facultyDepartment || applicant.faculty?.department}` : ''}
+                  </MenuItem>
                 ))
                 : <MenuItem value="" disabled>No applicants</MenuItem>
               }

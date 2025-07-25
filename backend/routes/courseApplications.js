@@ -4,9 +4,10 @@ const { protect, authorize } = require('../middleware/auth');
 const CourseApplication = require('../models/CourseApplication');
 const Course = require('../models/Course');
 const Faculty = require('../models/Faculty');
+const mongoose = require('mongoose');
 
 // Faculty applies for a course
-router.post('/:id/apply', protect, authorize('faculty'), async (req, res) => {
+router.post('/apply', protect, authorize('faculty'), async (req, res) => {
   try {
     const courseId = req.params.id;
     const facultyId = req.user.id;
@@ -30,9 +31,9 @@ router.post('/:id/apply', protect, authorize('faculty'), async (req, res) => {
 });
 
 // Admin views applications for a course
-router.get('/:id/applications', protect, authorize('admin'), async (req, res) => {
+router.get('/', protect, authorize('admin'), async (req, res) => {
   try {
-    const courseId = req.params.id;
+    const courseId = new mongoose.Types.ObjectId(req.params.id);
     const applications = await CourseApplication.find({ course: courseId, status: 'pending' })
       .populate('faculty', 'name email department designation');
     res.json({ success: true, data: applications });
@@ -42,7 +43,7 @@ router.get('/:id/applications', protect, authorize('admin'), async (req, res) =>
 });
 
 // Admin assigns course to a faculty (and approves application)
-router.post('/:id/assign', protect, authorize('admin'), async (req, res) => {
+router.post('/assign', protect, authorize('admin'), async (req, res) => {
   try {
     const courseId = req.params.id;
     const { facultyId } = req.body;
@@ -63,7 +64,7 @@ router.post('/:id/assign', protect, authorize('admin'), async (req, res) => {
 });
 
 // Admin unassigns a course from a faculty
-router.post('/:id/unassign', protect, authorize('admin'), async (req, res) => {
+router.post('/unassign', protect, authorize('admin'), async (req, res) => {
   try {
     const courseId = req.params.id;
     const course = await Course.findByIdAndUpdate(courseId, { instructor: null, assigned: false }, { new: true });
