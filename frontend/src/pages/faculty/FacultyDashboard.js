@@ -1,10 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Grid, Paper, Typography, CircularProgress, Button } from '@mui/material';
+import { 
+  Container, 
+  Grid, 
+  Paper, 
+  Typography, 
+  CircularProgress, 
+  Button, 
+  Card, 
+  CardContent, 
+  CardActions,
+  Box,
+  Chip,
+  Divider,
+  IconButton,
+  Tooltip,
+  Alert,
+  Avatar,
+  LinearProgress
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { api, API_ENDPOINTS } from '../../config/api';
 import './FacultyDashboard.css';
 import WarningIcon from '@mui/icons-material/Warning';
+import SchoolIcon from '@mui/icons-material/School';
+import PeopleIcon from '@mui/icons-material/People';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import AddIcon from '@mui/icons-material/Add';
+import HistoryIcon from '@mui/icons-material/History';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import PersonIcon from '@mui/icons-material/Person';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PendingIcon from '@mui/icons-material/Pending';
 
 const FacultyDashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -123,236 +151,393 @@ const FacultyDashboard = () => {
     }
   };
 
+  const getAttendanceColor = (percentage) => {
+    if (percentage >= 90) return '#4caf50';
+    if (percentage >= 75) return '#2196f3';
+    if (percentage >= 60) return '#ff9800';
+    return '#f44336';
+  };
+
+  const getAttendanceStatus = (percentage) => {
+    if (percentage >= 90) return 'Excellent';
+    if (percentage >= 75) return 'Good';
+    if (percentage >= 60) return 'Average';
+    return 'Poor';
+  };
+
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <Container maxWidth="lg">
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+            <Box textAlign="center">
+              <CircularProgress size={60} />
+              <Typography variant="h6" style={{ marginTop: 16 }}>
+                Loading Dashboard...
+              </Typography>
+            </Box>
+          </Box>
+        </Container>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
-      <div className="dashboard-content">
-        <Container maxWidth="lg">
-          <div className="dashboard-header">
-            <div>
-              <Typography variant="h4" component="h1" gutterBottom>
-                Faculty Dashboard
+      <Container maxWidth="xl">
+        {/* Header Section */}
+        <Box className="dashboard-header-section">
+          <Box className="welcome-section">
+            <Avatar className="faculty-avatar">
+              <PersonIcon />
+            </Avatar>
+            <Box className="welcome-text">
+              <Typography variant="h3" className="welcome-title">
+                Welcome back, {user?.roleData?.fullName || user?.name || 'Faculty Member'}!
               </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
-                Welcome, {user?.roleData?.fullName || user?.name || 'Faculty Member'}
+              <Typography variant="subtitle1" className="welcome-subtitle">
+                Here's what's happening with your courses today
               </Typography>
-              <Typography variant="subtitle2" color="text.secondary">
-                Manage your courses and student attendance
-              </Typography>
-            </div>
-            <div className="dashboard-header-actions">
-              <Button 
-                variant="outlined" 
-                color="primary" 
-                onClick={handleViewReports}
-                disabled={dashboardData.activeCourses === 0}
-              >
-                Attendance Reports
-              </Button>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={handleTakeAttendance}
-                disabled={dashboardData.activeCourses === 0}
-              >
-                Take Attendance
-              </Button>
-            </div>
-          </div>
+            </Box>
+          </Box>
+          <Box className="header-actions">
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              startIcon={<AssessmentIcon />}
+              onClick={handleViewReports}
+              disabled={dashboardData.activeCourses === 0}
+              className="action-button"
+            >
+              Reports
+            </Button>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              startIcon={<AssignmentIcon />}
+              onClick={handleTakeAttendance}
+              disabled={dashboardData.activeCourses === 0}
+              className="action-button primary"
+            >
+              Take Attendance
+            </Button>
+          </Box>
+        </Box>
 
-          {loading ? (
-            <div className="centered-box">
-              <CircularProgress />
-            </div>
-          ) : error ? (
-            <div className="text-center mb-2" style={{ color: 'red' }}>
-              <Typography variant="h6">{error}</Typography>
-              <Typography variant="body2" className="mt-1">
-                No data available
-              </Typography>
-            </div>
-          ) : (
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6} lg={4}>
-                <Paper className="dashboard-card">
-                  <div className="p-2">
-                    <Typography variant="h6" gutterBottom>
-                      Overview
-                    </Typography>
-                    <Typography variant="h3" color="primary">
+        {error ? (
+          <Alert severity="error" className="error-alert">
+            <Typography variant="h6">{error}</Typography>
+            <Typography variant="body2">
+              No data available at the moment. Please try refreshing the page.
+            </Typography>
+          </Alert>
+        ) : (
+          <>
+            {/* Statistics Cards */}
+            <Grid container spacing={3} className="stats-section">
+              <Grid item xs={12} sm={6} md={3}>
+                <Card className="stat-card active-courses">
+                  <CardContent>
+                    <Box className="stat-icon">
+                      <SchoolIcon />
+                    </Box>
+                    <Typography variant="h2" className="stat-number">
                       {dashboardData.activeCourses}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Active courses
+                    <Typography variant="h6" className="stat-label">
+                      Active Courses
                     </Typography>
-                    <div style={{ minHeight: 32 }} /> {/* Empty */}
-                  </div>
-                </Paper>
+                    <Typography variant="body2" className="stat-description">
+                      Currently teaching
+                    </Typography>
+                  </CardContent>
+                </Card>
               </Grid>
-              <Grid item xs={12} md={6} lg={4}>
-                <Paper className="dashboard-card">
-                  <div className="p-2">
-                    <Typography variant="h6" gutterBottom>
-                      Students
-                    </Typography>
-                    <Typography variant="h3" color="primary">
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <Card className="stat-card total-students">
+                  <CardContent>
+                    <Box className="stat-icon">
+                      <PeopleIcon />
+                    </Box>
+                    <Typography variant="h2" className="stat-number">
                       {dashboardData.totalStudents}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" className="mb-2">
-                      Total students
+                    <Typography variant="h6" className="stat-label">
+                      Total Students
                     </Typography>
-                    <Button 
-                      variant="outlined"
-                      size="small"
-                      onClick={handleViewAllStudents}
-                      disabled={dashboardData.totalStudents === 0}
-                      fullWidth
-                    >
-                      View All Students
-                    </Button>
-                    <div style={{ minHeight: 32 }} /> {/* Empty */}
-                  </div>
-                </Paper>
+                    <Typography variant="body2" className="stat-description">
+                      Across all courses
+                    </Typography>
+                  </CardContent>
+                </Card>
               </Grid>
-              <Grid item xs={12} md={6} lg={4}>
-                <Paper className="dashboard-card">
-                  <div className="p-2">
-                    <Typography variant="h6" gutterBottom>
-                      Attendance Rate
-                    </Typography>
-                    <Typography variant="h3" color="primary">
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <Card className="stat-card attendance-rate">
+                  <CardContent>
+                    <Box className="stat-icon">
+                      <TrendingUpIcon />
+                    </Box>
+                    <Typography variant="h2" className="stat-number">
                       {dashboardData.averageAttendance}%
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Average attendance rate
+                    <Typography variant="h6" className="stat-label">
+                      Attendance Rate
                     </Typography>
-                    <div style={{ minHeight: 32 }} /> {/* Empty */}
-                  </div>
-                </Paper>
+                    <Box className="attendance-progress">
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={dashboardData.averageAttendance} 
+                        className="progress-bar"
+                        style={{ backgroundColor: '#e0e0e0' }}
+                        sx={{
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: getAttendanceColor(dashboardData.averageAttendance)
+                          }
+                        }}
+                      />
+                      <Typography variant="caption" className="progress-label">
+                        {getAttendanceStatus(dashboardData.averageAttendance)}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
               </Grid>
-              <Grid item xs={12}>
-                <Paper className="dashboard-card">
-                  <div className="p-3">
-                    <Typography variant="h6" gutterBottom>
-                      Courses
+              
+              <Grid item xs={12} sm={6} md={3}>
+                <Card className="stat-card quick-actions">
+                  <CardContent>
+                    <Box className="stat-icon">
+                      <HistoryIcon />
+                    </Box>
+                    <Typography variant="h6" className="stat-label">
+                      Quick Actions
                     </Typography>
-                    <Grid container spacing={2} className="mt-1">
-                      {dashboardData.coursesList.length === 0 ? (
-                        <Grid item xs={12}>
-                          <Typography variant="body2" color="text.secondary">
-                            No courses assigned yet.
-                          </Typography>
-                          <div style={{ minHeight: 32 }} /> {/* Empty */}
-                        </Grid>
-                      ) : (
-                        dashboardData.coursesList.map((course) => (
-                          <Grid item xs={12} sm={6} md={4} key={course.id}>
-                            <Paper elevation={2} className="paper-course">
-                              <div className="paper-course-content">
-                                <Typography variant="h6">{course.name}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  {course.code}
-                                </Typography>
-                              </div>
-                              <div className="paper-course-actions">
-                                {/* Show Apply button if not already applied or assigned */}
-                                {!appliedCourses.includes(course.id) && !course.instructor && (
+                    <Box className="quick-actions-buttons">
+                      <Button 
+                        variant="outlined"
+                        size="small"
+                        onClick={handleViewAllStudents}
+                        disabled={dashboardData.totalStudents === 0}
+                        fullWidth
+                        className="quick-action-btn"
+                      >
+                        View Students
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+
+            {/* Main Content Grid */}
+            <Grid container spacing={3} className="main-content">
+              {/* Assigned Courses Section */}
+              <Grid item xs={12} lg={8}>
+                <Card className="content-card">
+                  <CardContent>
+                    <Box className="section-header">
+                      <Typography variant="h5" className="section-title">
+                        <SchoolIcon className="section-icon" />
+                        My Courses
+                      </Typography>
+                      <Chip 
+                        label={`${dashboardData.coursesList.length} courses`}
+                        color="primary"
+                        size="small"
+                      />
+                    </Box>
+                    
+                    {dashboardData.coursesList.length === 0 ? (
+                      <Box className="empty-state">
+                        <SchoolIcon className="empty-icon" />
+                        <Typography variant="h6" className="empty-title">
+                          No courses assigned yet
+                        </Typography>
+                        <Typography variant="body2" className="empty-description">
+                          You'll see your assigned courses here once they're available.
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Grid container spacing={2} className="courses-grid">
+                        {dashboardData.coursesList.map((course) => (
+                          <Grid item xs={12} sm={6} key={course.id}>
+                            <Card className="course-card">
+                              <CardContent>
+                                <Box className="course-header">
+                                  <Typography variant="h6" className="course-name">
+                                    {course.name}
+                                  </Typography>
+                                  <Chip 
+                                    label={course.code}
+                                    size="small"
+                                    variant="outlined"
+                                    className="course-code"
+                                  />
+                                </Box>
+                                
+                                <Box className="course-status">
+                                  {!appliedCourses.includes(course.id) && !course.instructor && (
+                                    <Chip 
+                                      icon={<PendingIcon />}
+                                      label="Available"
+                                      color="warning"
+                                      size="small"
+                                    />
+                                  )}
+                                  {appliedCourses.includes(course.id) && !course.instructor && (
+                                    <Chip 
+                                      icon={<PendingIcon />}
+                                      label="Applied"
+                                      color="info"
+                                      size="small"
+                                    />
+                                  )}
+                                  {course.instructor && (
+                                    <Chip 
+                                      icon={<CheckCircleIcon />}
+                                      label="Assigned"
+                                      color="success"
+                                      size="small"
+                                    />
+                                  )}
+                                </Box>
+                                
+                                <Box className="course-actions">
+                                  {!appliedCourses.includes(course.id) && !course.instructor && (
+                                    <Button
+                                      variant="contained"
+                                      color="primary"
+                                      size="small"
+                                      onClick={() => handleApply(course.id)}
+                                      disabled={applyLoading[course.id]}
+                                      startIcon={<AddIcon />}
+                                      fullWidth
+                                    >
+                                      {applyLoading[course.id] ? 'Applying...' : 'Apply'}
+                                    </Button>
+                                  )}
+                                  
+                                  <Box className="action-buttons">
+                                    <Tooltip title="Take Attendance">
+                                      <IconButton 
+                                        color="primary"
+                                        onClick={() => navigate(`/faculty/attendance?courseId=${course.id}`)}
+                                        className="action-icon"
+                                      >
+                                        <AssignmentIcon />
+                                      </IconButton>
+                                    </Tooltip>
+                                    
+                                    <Tooltip title="Low Attendance Alert">
+                                      <IconButton 
+                                        color="warning"
+                                        onClick={() => viewLowAttendance(course.id)}
+                                        className="action-icon"
+                                      >
+                                        <WarningIcon />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Box>
+                                </Box>
+                                
+                                {applyError[course.id] && (
+                                  <Alert severity="error" className="error-message">
+                                    {applyError[course.id]}
+                                  </Alert>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              {/* Available Courses Section */}
+              <Grid item xs={12} lg={4}>
+                <Card className="content-card">
+                  <CardContent>
+                    <Box className="section-header">
+                      <Typography variant="h5" className="section-title">
+                        <AddIcon className="section-icon" />
+                        Available Courses
+                      </Typography>
+                      <Chip 
+                        label={`${availableCourses.length} available`}
+                        color="secondary"
+                        size="small"
+                      />
+                    </Box>
+                    
+                    {availableCourses.length === 0 ? (
+                      <Box className="empty-state">
+                        <AddIcon className="empty-icon" />
+                        <Typography variant="h6" className="empty-title">
+                          No courses available
+                        </Typography>
+                        <Typography variant="body2" className="empty-description">
+                          Check back later for new course opportunities.
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Box className="available-courses-list">
+                        {availableCourses.map((course) => (
+                          <Card key={course._id || course.id} className="available-course-item">
+                            <CardContent>
+                              <Typography variant="h6" className="course-name">
+                                {course.courseName || course.name}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" className="course-details">
+                                {(course.courseCode || course.code) + 
+                                 (course.department ? ` | ${course.department}` : '') + 
+                                 (course.semester ? ` | Semester ${course.semester}` : '')}
+                              </Typography>
+                              
+                              <Box className="apply-section">
+                                {!appliedCourses.includes(course._id || course.id) ? (
                                   <Button
                                     variant="contained"
                                     color="primary"
                                     size="small"
-                                    onClick={() => handleApply(course.id)}
-                                    disabled={applyLoading[course.id]}
+                                    onClick={() => handleApply(course._id || course.id)}
+                                    disabled={applyLoading[course._id || course.id]}
+                                    startIcon={<AddIcon />}
+                                    fullWidth
                                   >
-                                    {applyLoading[course.id] ? 'Applying...' : 'Apply'}
+                                    {applyLoading[course._id || course.id] ? 'Applying...' : 'Apply Now'}
                                   </Button>
+                                ) : (
+                                  <Chip 
+                                    icon={<CheckCircleIcon />}
+                                    label="Applied"
+                                    color="success"
+                                    size="small"
+                                    fullWidth
+                                  />
                                 )}
-                                {appliedCourses.includes(course.id) && !course.instructor && (
-                                  <Typography variant="body2" color="success.main">Applied</Typography>
-                                )}
-                                {course.instructor && (
-                                  <Typography variant="body2" color="primary">Assigned</Typography>
-                                )}
-                                <Button 
-                                  variant="outlined"
-                                  size="small"
-                                  onClick={() => navigate(`/faculty/attendance?courseId=${course.id}`)}
-                                >
-                                  Take Attendance
-                                </Button>
-                                <Button 
-                                  variant="outlined"
-                                  size="small"
-                                  color="secondary"
-                                  startIcon={<WarningIcon />}
-                                  onClick={() => viewLowAttendance(course.id)}
-                                >
-                                  Low Attendance
-                                </Button>
-                              </div>
-                              {applyError[course.id] && (
-                                <Typography variant="body2" color="error">{applyError[course.id]}</Typography>
+                              </Box>
+                              
+                              {applyError[course._id || course.id] && (
+                                <Alert severity="error" className="error-message">
+                                  {applyError[course._id || course.id]}
+                                </Alert>
                               )}
-                              <div style={{ minHeight: 24 }} /> {/* Empty */}
-                            </Paper>
-                          </Grid>
-                        ))
-                      )}
-                    </Grid>
-                  </div>
-                </Paper>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
               </Grid>
             </Grid>
-          )}
-
-          {/* Always show available courses section, even if no available courses */}
-          <Paper className="dashboard-card" style={{ marginTop: 32 }}>
-            <div className="p-3">
-              <Typography variant="h6" gutterBottom>
-                Available Courses to Apply
-              </Typography>
-              {availableCourses.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No available courses to apply at the moment.
-                </Typography>
-              ) : (
-                <Grid container spacing={2} className="mt-1">
-                  {availableCourses.map((course) => (
-                    <Grid item xs={12} sm={6} md={4} key={course._id || course.id}>
-                      <Paper elevation={1} className="paper-course">
-                        <div className="paper-course-content">
-                          <Typography variant="h6">{course.courseName || course.name}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {(course.courseCode || course.code) + (course.department ? ` | ${course.department}` : '') + (course.semester ? ` | Semester ${course.semester}` : '')}
-                          </Typography>
-                        </div>
-                        <div className="paper-course-actions">
-                          {!appliedCourses.includes(course._id || course.id) ? (
-                            <Button
-                              variant="contained"
-                              color="primary"
-                              size="small"
-                              onClick={() => handleApply(course._id || course.id)}
-                              disabled={applyLoading[course._id || course.id]}
-                            >
-                              {applyLoading[course._id || course.id] ? 'Applying...' : 'Apply'}
-                            </Button>
-                          ) : (
-                            <Typography variant="body2" color="success.main">Applied</Typography>
-                          )}
-                        </div>
-                        {applyError[course._id || course.id] && (
-                          <Typography variant="body2" color="error">{applyError[course._id || course.id]}</Typography>
-                        )}
-                        <div style={{ minHeight: 24 }} />
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
-            </div>
-          </Paper>
-        </Container>
-      </div>
+          </>
+        )}
+      </Container>
     </div>
   );
 };
