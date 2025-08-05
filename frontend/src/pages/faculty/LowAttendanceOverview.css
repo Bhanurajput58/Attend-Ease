@@ -1,0 +1,126 @@
+/* Low Attendance Overview Page Styles */
+.low-attendance-overview-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 20px 0;
+}
+
+.low-attendance-overview-loading,
+.low-attendance-overview-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  gap: 16px;
+}
+
+/* Card hover effects */
+.MuiCard-root {
+  transition: all 0.3s ease;
+}
+
+.MuiCard-root:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Severity indicators */
+.severity-critical {
+  border-left-color: #f44336 !important;
+}
+
+.severity-warning {
+  border-left-color: #ff9800 !important;
+}
+
+.severity-moderate {
+  border-left-color: #ffc107 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .low-attendance-overview-container {
+    padding: 10px 0;
+  }
+  
+  .MuiGrid-item {
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .MuiCard-root {
+    margin-bottom: 16px;
+  }
+  
+  .MuiTypography-h4 {
+    font-size: 1.5rem;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 1.1rem;
+  }
+}
+
+/* Animation for loading states */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Print styles */
+@media print {
+  .MuiButton-root {
+    display: none !important;
+  }
+  
+  .low-attendance-overview-container {
+    background: white;
+    padding: 0;
+  }
+  
+  .MuiCard-root {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
+
+/* Accessibility improvements */
+.MuiCard-root:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .MuiCard-root {
+    border: 2px solid #000;
+  }
+  
+  .MuiChip-root {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .MuiCard-root {
+    transition: none;
+  }
+  
+  .MuiCard-root:hover {
+    transform: none;
+  }
+} 

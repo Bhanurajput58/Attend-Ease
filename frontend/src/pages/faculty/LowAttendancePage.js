@@ -30,7 +30,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import EmailIcon from '@mui/icons-material/Email';
-import SmsIcon from '@mui/icons-material/Sms';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import PersonIcon from '@mui/icons-material/Person';
@@ -56,110 +55,9 @@ const LowAttendancePage = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [notificationDialog, setNotificationDialog] = useState(false);
-  const [notificationType, setNotificationType] = useState('email');
   const [customMessage, setCustomMessage] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Enhanced mock data with more details
-  const mockLowAttendanceStudents = [
-    { 
-      id: '1', 
-      name: 'John Doe', 
-      rollNumber: 'S12345', 
-      attendance: 65.5,
-      email: 'john.doe@student.edu',
-      phone: '+1234567890',
-      classesAttended: 21,
-      totalClasses: 32,
-      lastAttended: '2025-07-18',
-      parentContact: '+1234567891'
-    },
-    { 
-      id: '2', 
-      name: 'Jane Smith', 
-      rollNumber: 'S12346', 
-      attendance: 70.2,
-      email: 'jane.smith@student.edu',
-      phone: '+1234567892',
-      classesAttended: 23,
-      totalClasses: 32,
-      lastAttended: '2025-07-20',
-      parentContact: '+1234567893'
-    },
-    { 
-      id: '3', 
-      name: 'Robert Johnson', 
-      rollNumber: 'S12347', 
-      attendance: 45.8,
-      email: 'robert.johnson@student.edu',
-      phone: '+1234567894',
-      classesAttended: 15,
-      totalClasses: 32,
-      lastAttended: '2025-07-15',
-      parentContact: '+1234567895'
-    },
-    { 
-      id: '4', 
-      name: 'Emily Davis', 
-      rollNumber: 'S12348', 
-      attendance: 60.0,
-      email: 'emily.davis@student.edu',
-      phone: '+1234567896',
-      classesAttended: 19,
-      totalClasses: 32,
-      lastAttended: '2025-07-19',
-      parentContact: '+1234567897'
-    },
-    { 
-      id: '5', 
-      name: 'Michael Brown', 
-      rollNumber: 'S12349', 
-      attendance: 54.3,
-      email: 'michael.brown@student.edu',
-      phone: '+1234567898',
-      classesAttended: 17,
-      totalClasses: 32,
-      lastAttended: '2025-07-16',
-      parentContact: '+1234567899'
-    },
-    { 
-      id: '6', 
-      name: 'Sarah Wilson', 
-      rollNumber: 'S12350', 
-      attendance: 68.9,
-      email: 'sarah.wilson@student.edu',
-      phone: '+1234567800',
-      classesAttended: 22,
-      totalClasses: 32,
-      lastAttended: '2025-07-21',
-      parentContact: '+1234567801'
-    },
-    { 
-      id: '7', 
-      name: 'David Taylor', 
-      rollNumber: 'S12351', 
-      attendance: 72.1,
-      email: 'david.taylor@student.edu',
-      phone: '+1234567802',
-      classesAttended: 23,
-      totalClasses: 32,
-      lastAttended: '2025-07-22',
-      parentContact: '+1234567803'
-    },
-    { 
-      id: '8', 
-      name: 'Jennifer Lewis', 
-      rollNumber: 'S12352', 
-      attendance: 48.7,
-      email: 'jennifer.lewis@student.edu',
-      phone: '+1234567804',
-      classesAttended: 16,
-      totalClasses: 32,
-      lastAttended: '2025-07-17',
-      parentContact: '+1234567805'
-    },
-  ];
 
   // Fetch course data and low attendance students
   useEffect(() => {
@@ -173,58 +71,57 @@ const LowAttendancePage = () => {
       return;
     }
     
+    console.log('Fetching data for course ID:', courseId);
+    
     try {
       setLoading(true);
       setError(null);
       
-      const mockCourseData = {
-        id: courseId,
-        name: 'Computer Network',
-        code: 'CS2008',
-        totalStudents: 45,
-        lowAttendanceCount: 8,
-        averageAttendance: 82,
-        semester: 'Fall 2025',
-        department: 'Computer Science'
-      };
-      
+      // Fetch course data
       try {
-        const courseResponse = await api.get(`${API_ENDPOINTS.GET_COURSE}/${courseId}`);
+        console.log('Fetching course data from:', `${API_ENDPOINTS.GET_COURSE_BY_ID(courseId)}`);
+        const courseResponse = await api.get(`${API_ENDPOINTS.GET_COURSE_BY_ID(courseId)}`);
+        console.log('Course response:', courseResponse.data);
         if (courseResponse.data && courseResponse.data.success) {
           setCourseData(courseResponse.data.data);
         } else {
-          setCourseData(mockCourseData);
+          setCourseData(null);
+          setError('Course data not available');
         }
       } catch (err) {
-        console.warn('Error fetching course data:', err);
-        setCourseData(mockCourseData);
+        console.error('Error fetching course data:', err);
+        setCourseData(null);
+        setError('Failed to load course information');
       }
       
+      // Fetch low attendance students
       try {
-        const studentsResponse = await api.get(`${API_ENDPOINTS.GET_LOW_ATTENDANCE}/${courseId}?threshold=${thresholdPercentage}`);
+        console.log('Fetching low attendance students from:', `${API_ENDPOINTS.GET_LOW_ATTENDANCE(courseId)}?threshold=${thresholdPercentage}`);
+        const studentsResponse = await api.get(`${API_ENDPOINTS.GET_LOW_ATTENDANCE(courseId)}?threshold=${thresholdPercentage}`);
+        console.log('Students response:', studentsResponse.data);
         
         if (studentsResponse.data && studentsResponse.data.success) {
-          setLowAttendanceStudents(studentsResponse.data.data || []);
+          // Backend returns { data: { students: [...], course: {...}, statistics: {...} } }
+          const studentsData = studentsResponse.data.data;
+          console.log('Students data:', studentsData);
+          setLowAttendanceStudents(studentsData.students || []);
+          
+          // Also update course data if not already set
+          if (!courseData && studentsData.course) {
+            setCourseData(studentsData.course);
+          }
         } else {
-          setLowAttendanceStudents(mockLowAttendanceStudents);
+          setLowAttendanceStudents([]);
         }
       } catch (err) {
-        console.warn('Error fetching low attendance students:', err);
-        setLowAttendanceStudents(mockLowAttendanceStudents);
+        console.error('Error fetching low attendance students:', err);
+        setLowAttendanceStudents([]);
       }
       
       setLoading(false);
     } catch (err) {
       console.error('Error in fetchLowAttendanceData:', err);
-      setLowAttendanceStudents(mockLowAttendanceStudents.slice(0, 4));
-      setCourseData({
-        id: courseId,
-        name: 'Computer Network',
-        code: 'CS2008',
-        totalStudents: 45,
-        lowAttendanceCount: 4,
-        averageAttendance: 82
-      });
+      setError('Failed to load data. Please try again.');
       setLoading(false);
     }
   };
@@ -239,6 +136,7 @@ const LowAttendancePage = () => {
 
   // Get attendance status
   const getAttendanceStatus = (attendance) => {
+    if (!attendance) return 'unknown';
     if (attendance < 50) return 'critical';
     if (attendance < 65) return 'warning';
     return 'at-risk';
@@ -250,6 +148,7 @@ const LowAttendancePage = () => {
       case 'critical': return '#f44336';
       case 'warning': return '#ff9800';
       case 'at-risk': return '#ffc107';
+      case 'unknown': return '#9e9e9e';
       default: return '#4caf50';
     }
   };
@@ -280,8 +179,8 @@ const LowAttendancePage = () => {
   // Filter and sort students
   const getFilteredAndSortedStudents = () => {
     let filtered = lowAttendanceStudents.filter(student => {
-      const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           student.rollNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (student.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (student.rollNumber || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       if (filterStatus === 'all') return matchesSearch;
       
@@ -291,12 +190,12 @@ const LowAttendancePage = () => {
 
     // Sort students
     filtered.sort((a, b) => {
-      let aValue = a[sortBy];
-      let bValue = b[sortBy];
+      let aValue = a[sortBy] || '';
+      let bValue = b[sortBy] || '';
       
       if (sortBy === 'attendance') {
-        aValue = parseFloat(aValue);
-        bValue = parseFloat(bValue);
+        aValue = parseFloat(aValue) || 0;
+        bValue = parseFloat(bValue) || 0;
       }
       
       if (sortOrder === 'asc') {
@@ -365,16 +264,69 @@ const LowAttendancePage = () => {
     try {
       const selectedStudentData = filteredStudents.filter(s => selectedStudents.includes(s.id));
       
-      // In a real app, you would call your API to send notifications
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      if (selectedStudentData.length === 0) {
+        showSnackbar('No students selected', 'warning');
+        return;
+      }
       
-      setNotificationDialog(false);
-      setSelectedStudents([]);
-      setCustomMessage('');
-      showSnackbar(`${notificationType.toUpperCase()} notifications sent to ${selectedStudentData.length} students`, 'success');
+      // Show loading state
+      setSnackbar({ open: true, message: 'Sending emails...', severity: 'info' });
+      
+      // Prepare the email data
+      const emailData = {
+        courseId: courseId,
+        studentIds: selectedStudentData.map(s => s.id),
+        customMessage: customMessage,
+        threshold: thresholdPercentage
+      };
+      
+      // Call the low attendance emails API
+      const response = await api.post(API_ENDPOINTS.SEND_LOW_ATTENDANCE_EMAILS, emailData);
+      
+      if (response.data && response.data.success) {
+        setNotificationDialog(false);
+        setSelectedStudents([]);
+        setCustomMessage('');
+        
+        // Show detailed results
+        const { data } = response.data;
+        let message = response.data.message;
+        
+        // Add detailed statistics
+        if (data.emailResults && data.emailResults.length > 0) {
+          const successful = data.emailResults.filter(r => r.success).length;
+          const failed = data.emailResults.filter(r => !r.success).length;
+          message += `\n\nDetailed Results: ${successful} successful, ${failed} failed`;
+          
+          // Log detailed results for debugging
+          console.log('Email Results:');
+          data.emailResults.forEach(result => {
+            if (result.success) {
+              console.log(`✅ Email sent to ${result.studentName} (${result.email})`);
+            } else {
+              console.log(`❌ Email failed for ${result.studentName}: ${result.error}`);
+            }
+          });
+        }
+        
+        showSnackbar(message, 'success');
+        
+      } else {
+        throw new Error('Failed to send emails');
+      }
+      
     } catch (err) {
-      console.error('Error sending notifications:', err);
-      showSnackbar('Failed to send notifications. Please try again.', 'error');
+      console.error('Error sending emails:', err);
+      
+      let errorMessage = 'Failed to send emails. Please try again.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      showSnackbar(errorMessage, 'error');
     }
   };
 
@@ -382,13 +334,13 @@ const LowAttendancePage = () => {
   const exportToCSV = () => {
     const headers = ['Name', 'Roll Number', 'Attendance %', 'Classes Attended', 'Total Classes', 'Status', 'Last Attended'];
     const csvData = filteredStudents.map(student => [
-      student.name,
-      student.rollNumber,
-      student.attendance,
-      student.classesAttended,
-      student.totalClasses,
+      student.name || 'N/A',
+      student.rollNumber || 'N/A',
+      student.attendance || 0,
+      student.classesAttended || 0,
+      student.totalClasses || 0,
       getAttendanceStatus(student.attendance),
-      student.lastAttended
+      student.lastAttended || 'N/A'
     ]);
     
     const csvContent = [headers, ...csvData]
@@ -399,7 +351,7 @@ const LowAttendancePage = () => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `low-attendance-${courseData?.code}-${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `low-attendance-${courseData?.code || 'course'}-${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -443,41 +395,50 @@ const LowAttendancePage = () => {
       </div>
     );
   }
+
+  if (!courseData) {
+    return (
+      <div className="low-attendance-error">
+        <Typography variant="h6" color="error">Course information not available</Typography>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          startIcon={<ArrowBackIcon />} 
+          onClick={handleGoBack}
+        >
+          Back to Dashboard
+        </Button>
+      </div>
+    );
+  }
   
   return (
     <div className="low-attendance-container">
       <Container maxWidth="xl">
         <div className="low-attendance-header">
-          <div className="header-top">
-            <Button 
-              startIcon={<ArrowBackIcon />} 
-              onClick={handleGoBack} 
-              className="back-button"
-            >
-              Back
-            </Button>
-            <div className="course-info">
+          <div className="low-attendance-header-top">
+            <div className="low-attendance-course-info">
               <Typography variant="h4" component="h1">
                 Low Attendance Students
               </Typography>
               <Typography variant="subtitle1" color="text.secondary">
-                {courseData?.name} ({courseData?.code}) - {courseData?.semester}
+                {courseData.name || 'Course Name Not Available'} ({courseData.code || 'Code Not Available'}) - {courseData.semester || 'Semester Not Available'}
               </Typography>
             </div>
             <Tooltip title="Refresh Data">
               <IconButton onClick={handleRefresh} disabled={refreshing}>
-                <RefreshIcon className={refreshing ? 'rotating' : ''} />
+                <RefreshIcon className={refreshing ? 'low-attendance-rotating' : ''} />
               </IconButton>
             </Tooltip>
           </div>
 
           {/* Statistics Cards */}
-          <Grid container spacing={3} className="statistics-grid">
+          <Grid container spacing={3} className="low-attendance-statistics-grid">
             <Grid item xs={12} sm={6} md={3}>
-              <Card className="stat-card critical">
+              <Card className="low-attendance-stat-card critical">
                 <CardContent>
-                  <div className="stat-content">
-                    <CriticalIcon className="stat-icon" />
+                  <div className="low-attendance-stat-content">
+                    <CriticalIcon className="low-attendance-stat-icon" />
                     <div>
                       <Typography variant="h4">{stats.critical}</Typography>
                       <Typography variant="body2">Critical (&lt;50%)</Typography>
@@ -487,10 +448,10 @@ const LowAttendancePage = () => {
               </Card>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Card className="stat-card warning">
+              <Card className="low-attendance-stat-card warning">
                 <CardContent>
-                  <div className="stat-content">
-                    <WarningIcon className="stat-icon" />
+                  <div className="low-attendance-stat-content">
+                    <WarningIcon className="low-attendance-stat-icon" />
                     <div>
                       <Typography variant="h4">{stats.warning}</Typography>
                       <Typography variant="body2">Warning (50-64%)</Typography>
@@ -500,10 +461,10 @@ const LowAttendancePage = () => {
               </Card>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Card className="stat-card at-risk">
+              <Card className="low-attendance-stat-card at-risk">
                 <CardContent>
-                  <div className="stat-content">
-                    <WarningIcon className="stat-icon" />
+                  <div className="low-attendance-stat-content">
+                    <WarningIcon className="low-attendance-stat-icon" />
                     <div>
                       <Typography variant="h4">{stats.atRisk}</Typography>
                       <Typography variant="body2">At Risk (65-74%)</Typography>
@@ -513,10 +474,10 @@ const LowAttendancePage = () => {
               </Card>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Card className="stat-card total">
+              <Card className="low-attendance-stat-card total">
                 <CardContent>
-                  <div className="stat-content">
-                    <PersonIcon className="stat-icon" />
+                  <div className="low-attendance-stat-content">
+                    <PersonIcon className="low-attendance-stat-icon" />
                     <div>
                       <Typography variant="h4">{filteredStudents.length}</Typography>
                       <Typography variant="body2">Total Students</Typography>
@@ -529,8 +490,8 @@ const LowAttendancePage = () => {
         </div>
 
         {/* Filters and Actions */}
-        <div className="controls-section">
-          <div className="filters">
+        <div className="low-attendance-controls-section">
+          <div className="low-attendance-filters">
             <TextField
               label="Search Students"
               variant="outlined"
@@ -544,7 +505,7 @@ const LowAttendancePage = () => {
                   </InputAdornment>
                 ),
               }}
-              className="search-field"
+              className="low-attendance-search-field"
             />
             
             <TextField
@@ -557,10 +518,10 @@ const LowAttendancePage = () => {
               InputProps={{
                 inputProps: { min: 0, max: 100 }
               }}
-              className="threshold-field"
+              className="low-attendance-threshold-field"
             />
 
-            <FormControl size="small" className="filter-select">
+            <FormControl size="small" className="low-attendance-filter-select">
               <InputLabel>Filter by Status</InputLabel>
               <Select
                 value={filterStatus}
@@ -575,7 +536,7 @@ const LowAttendancePage = () => {
             </FormControl>
           </div>
           
-          <div className="actions">
+          <div className="low-attendance-actions">
             <Button 
               variant="outlined"
               startIcon={<FileDownloadIcon />}
@@ -588,18 +549,18 @@ const LowAttendancePage = () => {
             <Button 
               variant="contained" 
               color="warning" 
-              startIcon={<NotificationsIcon />}
+              startIcon={<EmailIcon />}
               onClick={openNotificationDialog}
               disabled={selectedStudents.length === 0}
             >
-              Send Notifications ({selectedStudents.length})
+              Send Email ({selectedStudents.length})
             </Button>
           </div>
         </div>
         
         {/* Students Table */}
-        <Paper className="students-table-container">
-          <div className="table-header">
+        <Paper className="low-attendance-students-table-container">
+          <div className="low-attendance-table-header">
             <Typography variant="h6">
               {filteredStudents.length} Student{filteredStudents.length !== 1 ? 's' : ''} with Attendance Below {thresholdPercentage}%
             </Typography>
@@ -607,18 +568,18 @@ const LowAttendancePage = () => {
               <Button 
                 size="small"
                 onClick={handleSelectAll}
-                className="select-all-button"
+                className="low-attendance-select-all-button"
               >
                 {selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}
               </Button>
             )}
           </div>
           
-          <div className="table-wrapper">
-            <table className="students-table">
+          <div className="low-attendance-table-wrapper">
+            <table className="low-attendance-students-table">
               <thead>
                 <tr>
-                  <th className="checkbox-column">
+                  <th className="low-attendance-checkbox-column">
                     <input 
                       type="checkbox"
                       checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
@@ -646,7 +607,6 @@ const LowAttendancePage = () => {
                   </th>
                   <th>Classes</th>
                   <th>Status</th>
-                  <th>Last Attended</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -664,39 +624,47 @@ const LowAttendancePage = () => {
                           />
                         </td>
                         <td>{index + 1}</td>
-                        <td className="student-name">{student.name}</td>
-                        <td>{student.rollNumber}</td>
+                        <td className="low-attendance-student-name">{student.name || 'Name Not Available'}</td>
+                        <td>{student.rollNumber || 'Roll Number Not Available'}</td>
                         <td>
-                          <div className="attendance-cell">
-                            <div className="attendance-bar">
+                          <div className="low-attendance-attendance-cell">
+                            <div className="low-attendance-attendance-bar">
                               <div 
-                                className="attendance-fill"
+                                className="low-attendance-attendance-fill"
                                 style={{ 
-                                  width: `${student.attendance}%`,
+                                  width: `${student.attendance || 0}%`,
                                   backgroundColor: getStatusColor(status)
                                 }}
                               ></div>
-                              <span className="attendance-text">
-                                {student.attendance.toFixed(1)}%
+                              <span className="low-attendance-attendance-text">
+                                {(student.attendance || 0).toFixed(1)}%
                               </span>
                             </div>
                           </div>
                         </td>
-                        <td>{student.classesAttended}/{student.totalClasses}</td>
+                        <td>{student.classesAttended || 0}/{student.totalClasses || 0}</td>
                         <td>
                           <Chip
                             label={status === 'at-risk' ? 'At Risk' : status.charAt(0).toUpperCase() + status.slice(1)}
-                            className={`status-chip ${status}`}
+                            className={`low-attendance-status-chip ${status}`}
                             size="small"
                           />
+                          {!student.email && (
+                            <Chip
+                              label="No Email"
+                              color="warning"
+                              size="small"
+                              sx={{ ml: 0.5, fontSize: '0.6rem', height: 16 }}
+                              title="This student doesn't have an email address and cannot receive emails"
+                            />
+                          )}
                         </td>
-                        <td>{student.lastAttended}</td>
                         <td>
                           <Tooltip title="View Profile">
                             <IconButton
                               size="small"
                               onClick={() => viewStudentProfile(student.id)}
-                              className="action-button"
+                              className="low-attendance-action-button"
                             >
                               <VisibilityIcon />
                             </IconButton>
@@ -707,8 +675,11 @@ const LowAttendancePage = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="9" className="no-data">
-                      No students found with attendance below {thresholdPercentage}%
+                    <td colSpan="8" className="low-attendance-no-data">
+                      {lowAttendanceStudents.length === 0 
+                        ? 'No students found with attendance below the threshold'
+                        : 'No students match the current search criteria'
+                      }
                     </td>
                   </tr>
                 )}
@@ -724,31 +695,9 @@ const LowAttendancePage = () => {
           maxWidth="sm"
           fullWidth
         >
-          <DialogTitle>Send Notifications</DialogTitle>
+          <DialogTitle>Send Email</DialogTitle>
           <DialogContent>
-            <div className="notification-form">
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Notification Type</InputLabel>
-                <Select
-                  value={notificationType}
-                  label="Notification Type"
-                  onChange={(e) => setNotificationType(e.target.value)}
-                >
-                  <MenuItem value="email">
-                    <EmailIcon style={{ marginRight: 8 }} />
-                    Email
-                  </MenuItem>
-                  <MenuItem value="sms">
-                    <SmsIcon style={{ marginRight: 8 }} />
-                    SMS
-                  </MenuItem>
-                  <MenuItem value="both">
-                    <NotificationsIcon style={{ marginRight: 8 }} />
-                    Both Email & SMS
-                  </MenuItem>
-                </Select>
-              </FormControl>
-              
+            <div className="low-attendance-notification-form">
               <TextField
                 fullWidth
                 multiline
@@ -761,14 +710,20 @@ const LowAttendancePage = () => {
               />
               
               <Alert severity="info" style={{ marginTop: 16 }}>
-                This will send notifications to {selectedStudents.length} selected students about their low attendance.
+                This will send email to {selectedStudents.length} selected students about their low attendance.
+                {filteredStudents.filter(s => selectedStudents.includes(s.id) && !s.email).length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <strong>Note:</strong> Some students don't have email addresses and cannot receive emails.
+                    The system will use the email addresses from the imported students collection.
+                  </div>
+                )}
               </Alert>
             </div>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setNotificationDialog(false)}>Cancel</Button>
             <Button variant="contained" onClick={handleSendNotifications}>
-              Send Notifications
+              Send Email
             </Button>
           </DialogActions>
         </Dialog>
