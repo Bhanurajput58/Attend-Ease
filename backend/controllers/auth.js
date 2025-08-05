@@ -96,14 +96,40 @@ exports.register = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role: selectedRole } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide an email and password' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Please provide an email and password' 
+      });
     }
+    
     let user = null;
     let userModel = null;
-    user = await Student.findOne({ email }).select('+password');
-    if (user) userModel = Student;
+    
+    // If role is specified, search in that specific model first
+    if (selectedRole) {
+      switch (selectedRole) {
+        case 'student':
+          user = await Student.findOne({ email }).select('+password');
+          if (user) userModel = Student;
+          break;
+        case 'faculty':
+          user = await Faculty.findOne({ email }).select('+password');
+          if (user) userModel = Faculty;
+          break;
+        case 'admin':
+          user = await Admin.findOne({ email }).select('+password');
+          if (user) userModel = Admin;
+          break;
+      }
+    }
+    
+    // If not found in specific model or no role specified, search in all models
+    if (!user) {
+      user = await Student.findOne({ email }).select('+password');
+      if (user) userModel = Student;
+    }
     if (!user) {
       user = await Faculty.findOne({ email }).select('+password');
       if (user) userModel = Faculty;
@@ -116,34 +142,60 @@ exports.login = async (req, res) => {
       user = await User.findOne({ email }).select('+password');
       if (user) userModel = User;
     }
+    
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid credentials' 
+      });
     }
+    
+    // If role was specified, verify it matches
+    if (selectedRole && user.role !== selectedRole) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid role for this user' 
+      });
+    }
+    
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid credentials' 
+      });
     }
+    
     const token = generateToken(user._id);
+    
     if (user.role === 'admin' && userModel === Admin) {
       user.lastLogin = Date.now();
       await user.save();
     }
+    
     let userInfo = {
       id: user._id,
       name: user.name,
       email: user.email,
       role: user.role
     };
+    
     if (user.role === 'student' && user.studentId) userInfo.studentId = user.studentId;
     else if (user.role === 'faculty' && user.facultyId) userInfo.facultyId = user.facultyId;
     else if (user.role === 'admin' && user.adminId) userInfo.adminId = user.adminId;
+    
     res.json({
       success: true,
       token,
       user: userInfo
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error',
+      error: error.message 
+    });
   }
 };
 
@@ -153,7 +205,7 @@ exports.getMe = async (req, res) => {
     let user = null;
     switch (req.user.role) {
       case 'student': user = await Student.findById(req.user.id); break;
-      case 'faculty': user = await Faculty.findById(req.user.id); break;
+      case 'faculty': user = await Faculty.findOne({ user: req.user.id }); break;
       case 'admin': user = await Admin.findById(req.user.id); break;
       default: user = await User.findById(req.user.id);
     }

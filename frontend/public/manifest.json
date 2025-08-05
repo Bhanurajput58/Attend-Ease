@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "AttendEase",
+  "name": "Attendance Management System",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +20,10 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#1976d2",
+  "background_color": "#ffffff",
+  "description": "A comprehensive attendance management system for educational institutions",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en"
 }

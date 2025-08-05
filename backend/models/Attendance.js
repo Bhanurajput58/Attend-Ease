@@ -10,6 +10,10 @@ const attendanceSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  topic: {
+    type: String,
+    default: 'No topic specified'
+  },
   students: [{
     student: {
       type: mongoose.Schema.Types.ObjectId,
@@ -23,7 +27,7 @@ const attendanceSchema = new mongoose.Schema({
     },
     status: {
       type: String,
-      enum: ['present', 'absent', 'Present', 'Absent', 'PRESENT', 'ABSENT'],
+      enum: ['present', 'absent', 'late', 'Present', 'Absent', 'Late', 'PRESENT', 'ABSENT', 'LATE'],
       required: true
     },
     remarks: {
@@ -46,7 +50,6 @@ const attendanceSchema = new mongoose.Schema({
   }
 });
 
-// Add index for efficient querying
 attendanceSchema.index({ course: 1, date: 1 }, { unique: true });
 
 // Method to check if student exists in a record

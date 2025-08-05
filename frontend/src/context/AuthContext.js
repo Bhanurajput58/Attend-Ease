@@ -23,13 +23,19 @@ export const AuthProvider = ({ children }) => {
       const response = await api.get(API_ENDPOINTS.GET_USER);
       
       if (response.data.success && response.data.user) {
-        setUser(response.data.user);
+        // Get token from localStorage and add to user object
+        const token = localStorage.getItem('token');
+        const userWithToken = { ...response.data.user, token };
+        setUser(userWithToken);
         setIsAuthenticated(true);
       } else {
         throw new Error('Invalid response format from server');
       }
     } catch (error) {
-      console.error('Error loading user:', error);
+      // Only log errors that are not 401 (unauthorized) as those are expected for non-authenticated users
+      if (error.response?.status !== 401) {
+        console.error('Error loading user:', error);
+      }
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -60,9 +66,12 @@ export const AuthProvider = ({ children }) => {
       
       // Store the token for future requests
       localStorage.setItem('token', token);
-      setUser(user);
+      
+      // Add token to user object for API calls
+      const userWithToken = { ...user, token };
+      setUser(userWithToken);
       setIsAuthenticated(true);
-      return user;
+      return userWithToken;
     } catch (error) {
       console.error('Login error details:', {
         message: error.message,

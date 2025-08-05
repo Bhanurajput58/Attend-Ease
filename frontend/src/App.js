@@ -1,18 +1,18 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import NotFound from './pages/NotFound';
-import Unauthorized from './pages/Unauthorized';
+import Home from './auth-pages/Home';
+import Login from './auth-pages/Login';
+import Register from './auth-pages/Register';
 import ProtectedRoute from './components/ProtectedRoute';
 import { RoleRequired } from './components/RoleBasedAccess';
 import { ReportsPage, ReportDetail, AttendanceReportsPage } from './pages/reports';
-import { CourseListPage, CourseDetailPage } from './pages/courses';
-import { AttendanceListPage, TakeAttendancePage, AttendanceDetailPage, SessionDetailPage } from './pages/attendance';
+import { AttendanceListPage, AttendanceDetailPage } from './pages/attendance';
 import StudentsListPage from './pages/faculty/StudentsListPage';
+import StudentDetailsPage from './pages/admin/StudentDetailsPage';
 import Header from './components/Header';
-import ProfilePage from './pages/ProfilePage';
+import Profile from './auth-pages/Profile';
+import NotificationCenter from './pages/notifications/NotificationCenter';
+import { NotificationProvider } from './context/NotificationContext';
 
 // Import role-specific pages
 import StudentDashboard from './pages/students/StudentDashboard';
@@ -21,6 +21,7 @@ import CourseAttendanceDetail from './pages/students/CourseAttendanceDetail';
 import FacultyDashboard from './pages/faculty/FacultyDashboard';
 import AttendanceManager from './pages/faculty/AttendanceManager';
 import LowAttendancePage from './pages/faculty/LowAttendancePage';
+import LowAttendanceOverview from './pages/faculty/LowAttendanceOverview';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageUsers from './pages/admin/ManageUsers';
 import CourseList from './pages/admin/CourseList';
@@ -35,21 +36,29 @@ const App = () => {
   }, []);
 
   return (
-    <>
+    <NotificationProvider>
       <Header />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         
         {/* Protected routes */}
-        <Route element={<ProtectedRoute />}>  
+        <Route element={<ProtectedRoute />}>
           {/* Global profile page for all roles */}
-          <Route path="/student/profile" element={<ProfilePage />} />
-          <Route path="/faculty/profile" element={<ProfilePage />} />
-          <Route path="/admin/profile" element={<ProfilePage />} />
+          <Route path="/student/profile/:studentId" element={<Profile />} />
+          <Route path="/student/profile" element={<Profile />} />
+          <Route path="/faculty/profile" element={<Profile />} />
+          <Route path="/admin/profile" element={<Profile />} />
+          
+          {/* Notification Center - All roles */}
+          <Route path="/notifications" element={
+            <RoleRequired roles={ALL_ROLES}>
+              <NotificationCenter />
+            </RoleRequired>
+          } />
+          
           {/* Student dashboard (own) */}
           <Route path="/student/dashboard" element={
             <RoleRequired roles={['student']}>
@@ -96,6 +105,11 @@ const App = () => {
               <AttendanceDetailPage />
             </RoleRequired>
           } />
+          <Route path="/faculty/low-attendance" element={
+            <RoleRequired roles={['faculty']}>
+              <LowAttendanceOverview />
+            </RoleRequired>
+          } />
           <Route path="/faculty/low-attendance/:courseId" element={
             <RoleRequired roles={['faculty']}>
               <LowAttendancePage />
@@ -123,6 +137,12 @@ const App = () => {
               <CourseList />
             </RoleRequired>
           } />
+          {/* Admin student details page - restricted to admin only */}
+          <Route path="/admin/students/:id" element={
+            <RoleRequired roles={['admin']}>
+              <StudentDetailsPage />
+            </RoleRequired>
+          } />
 
           {/* Common routes */}
           {/* Reports routes - Faculty/Admin only */}
@@ -141,41 +161,25 @@ const App = () => {
               <ReportDetail />
             </RoleRequired>
           } />
-          {/* Courses routes - All users but students see limited data */}
-          <Route path="/courses" element={<CourseListPage />} />
-          <Route path="/courses/:id" element={<CourseDetailPage />} />
-          {/* Attendance routes */}
-          <Route path="/attendance" element={<AttendanceListPage />} />
-          {/* Take attendance - Faculty/Admin only */}
-          <Route path="/attendance/take" element={
+          {/* Attendance routes - Faculty/Admin only */}
+          <Route path="/attendance" element={
             <RoleRequired roles={FACULTY_ADMIN_ROLES}>
-              <TakeAttendancePage />
+              <AttendanceListPage />
             </RoleRequired>
           } />
-          {/* More specific attendance routes first */}
-          <Route path="/attendance/session/:id" element={
+          <Route path="/attendance/:id" element={
             <RoleRequired roles={FACULTY_ADMIN_ROLES}>
-              <SessionDetailPage />
+              <AttendanceDetailPage />
             </RoleRequired>
           } />
-          {/* More specific routes should come */}
           <Route path="/attendance/edit/:id" element={
-            <RoleRequired roles={FACULTY_ADMIN_ROLES}>
-              <AttendanceDetailPage mode="edit" />
+            <RoleRequired roles={['faculty']}>
+              <AttendanceManager mode="edit" />
             </RoleRequired>
-          } />
-          <Route path="/attendance/course/:courseId" element={<AttendanceListPage filter="course" />} />
-          {/* Generic attendance detail - Must be last among attendance routes */}
-          <Route path="/attendance/:id" element={<AttendanceDetailPage />} />
-          {/* Redirect old student detail route to the new profile page */}
-          <Route path="/students/:id" element={
-            <Navigate replace to={location => `/student/profile/${location.pathname.split('/')[2]}`} />
           } />
         </Route>
-        {/* Fallback route */}
-        <Route path="*" element={<NotFound />} />
       </Routes>
-    </>
+    </NotificationProvider>
   );
 };
 

@@ -1,8 +1,6 @@
 const User = require('../models/User');
 
-// @desc    Get all users
-// @route   GET /api/users
-// @access  Private/Admin
+
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -16,9 +14,7 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-// @desc    Get single user
-// @route   GET /api/users/:id
-// @access  Private/Admin
+
 exports.getUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -36,9 +32,7 @@ exports.getUser = async (req, res) => {
   }
 };
 
-// @desc    Create user
-// @route   POST /api/users
-// @access  Private/Admin
+
 exports.createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -66,9 +60,7 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// @desc    Update user
-// @route   PUT /api/users/:id
-// @access  Private/Admin
+
 exports.updateUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -97,9 +89,7 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// @desc    Delete user
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
+
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
