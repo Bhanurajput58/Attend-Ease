@@ -1,0 +1,657 @@
+/* NotificationCenter.css */
+.notification-center-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 20px;
+  width: 100%;
+}
+
+.notification-center-content {
+  width: 100%;
+  max-width: none;
+}
+
+.notification-center-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px 30px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.notification-center-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.notification-center-title .MuiSvgIcon-root {
+  font-size: 2rem !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.notification-center-subtitle {
+  opacity: 0.9;
+  font-size: 1rem !important;
+}
+
+/* Header Refresh Button */
+.header-refresh-button {
+  border-radius: 25px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  font-size: 0.9rem !important;
+  transition: all 0.3s ease !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.header-refresh-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.header-refresh-button:active {
+  transform: translateY(0) !important;
+}
+
+.header-refresh-button:disabled {
+  opacity: 0.6 !important;
+  transform: none !important;
+}
+
+/* Filters Section */
+.notification-filters-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.notification-filters-card .MuiCardContent-root {
+  padding: 20px;
+}
+
+/* Statistics Cards */
+.notification-stats-grid {
+  margin-bottom: 20px;
+}
+
+.notification-stat-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  position: relative;
+}
+
+.notification-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.notification-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.notification-stat-card .MuiCardContent-root {
+  padding: 15px;
+  text-align: center;
+}
+
+.notification-stat-number {
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 5px !important;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.notification-stat-label {
+  color: #666 !important;
+  font-weight: 500 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.75rem !important;
+}
+
+/* Notifications List */
+.notification-list-container {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.notification-sort-header {
+  background: #f8f9fa;
+  padding: 20px 25px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification-sort-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.notification-sort-button {
+  border-radius: 20px !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  padding: 8px 16px !important;
+  min-width: 100px !important;
+}
+
+.notification-sort-button.MuiButton-contained {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Individual Notification Cards */
+.notification-item-card {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  transition: all 0.3s ease;
+  margin-bottom: 0 !important;
+}
+
+.notification-item-card:hover {
+  background: #f8f9fa !important;
+  transform: translateX(5px);
+}
+
+.notification-item-card:last-child {
+  border-bottom: none !important;
+}
+
+.notification-item-card.unread {
+  background: linear-gradient(90deg, rgba(102, 126, 234, 0.05), transparent) !important;
+  border-left: 4px solid #667eea !important;
+}
+
+.notification-item-card .MuiCardContent-root {
+  padding: 20px 25px;
+}
+
+.notification-avatar {
+  width: 50px !important;
+  height: 50px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.notification-title:hover {
+  color: #667eea !important;
+}
+
+.notification-message {
+  color: #666 !important;
+  line-height: 1.6 !important;
+  margin-bottom: 15px !important;
+  white-space: pre-wrap;
+}
+
+.notification-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.notification-sender {
+  color: #888 !important;
+  font-size: 0.85rem !important;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.notification-chip {
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  height: 24px !important;
+}
+
+.notification-chip.priority-urgent {
+  background: #dc3545 !important;
+  color: white !important;
+}
+
+.notification-chip.priority-high {
+  background: #fd7e14 !important;
+  color: white !important;
+}
+
+.notification-chip.priority-medium {
+  background: #0d6efd !important;
+  color: white !important;
+}
+
+.notification-chip.priority-low {
+  background: #198754 !important;
+  color: white !important;
+}
+
+.notification-time {
+  color: #999 !important;
+  font-size: 0.8rem !important;
+}
+
+/* Action Buttons */
+.notification-action-button {
+  border-radius: 20px !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  padding: 6px 16px !important;
+  font-size: 0.8rem !important;
+}
+
+.notification-action-button.mark-read {
+  background: linear-gradient(135deg, #28a745, #20c997) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.notification-action-button.mark-read:hover {
+  background: linear-gradient(135deg, #218838, #1ea085) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3) !important;
+}
+
+/* Filter Buttons */
+.filter-button {
+  border-radius: 25px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  padding: 10px 24px !important;
+  font-size: 0.9rem !important;
+  transition: all 0.3s ease;
+  min-width: 120px !important;
+  height: 40px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.filter-button.refresh {
+  background: linear-gradient(135deg, #17a2b8, #20c997) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.filter-button.clear {
+  background: linear-gradient(135deg, #6c757d, #495057) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.filter-button.mark-all-read {
+  background: linear-gradient(135deg, #28a745, #20c997) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+}
+
+.filter-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.filter-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Filter buttons container */
+.filter-buttons-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: center;
+  flex-direction: row;
+}
+
+/* Filter Buttons */
+.filter-button {
+  border-radius: 20px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  padding: 8px 16px !important;
+  font-size: 0.85rem !important;
+  transition: all 0.3s ease;
+  min-width: 100px !important;
+  height: 36px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  white-space: nowrap;
+}
+
+.filter-button.clear {
+  background: linear-gradient(135deg, #6c757d, #495057) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.filter-button.mark-all-read {
+  background: linear-gradient(135deg, #28a745, #20c997) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+}
+
+.filter-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.filter-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Search and Filter Fields */
+.notification-search-field .MuiOutlinedInput-root {
+  border-radius: 25px !important;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.notification-search-field .MuiOutlinedInput-root:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.notification-search-field .MuiOutlinedInput-root.Mui-focused {
+  background: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.notification-filter-select .MuiOutlinedInput-root {
+  border-radius: 15px !important;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.notification-filter-select .MuiOutlinedInput-root:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Empty State */
+.notification-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.notification-empty-state .MuiSvgIcon-root {
+  font-size: 4rem !important;
+  color: #ccc !important;
+  margin-bottom: 20px !important;
+}
+
+.notification-empty-state .MuiTypography-h6 {
+  color: #666 !important;
+  margin-bottom: 10px !important;
+}
+
+.notification-empty-state .MuiTypography-body2 {
+  color: #999 !important;
+}
+
+/* Loading State */
+.notification-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+}
+
+/* Pagination */
+.notification-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  padding: 20px;
+}
+
+.notification-pagination .MuiPagination-root {
+  background: white;
+  border-radius: 25px;
+  padding: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.notification-pagination .MuiPaginationItem-root {
+  border-radius: 50% !important;
+  margin: 0 2px;
+  transition: all 0.3s ease;
+}
+
+.notification-pagination .MuiPaginationItem-root:hover {
+  background: #667eea !important;
+  color: white !important;
+  transform: scale(1.1);
+}
+
+.notification-pagination .Mui-selected {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Dialog Styles */
+.notification-dialog .MuiDialog-paper {
+  border-radius: 20px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+}
+
+.notification-dialog .MuiDialogTitle-root {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 20px 20px 0 0;
+}
+
+.notification-dialog .MuiDialogContent-root {
+  padding: 30px !important;
+}
+
+.notification-dialog .MuiDialogActions-root {
+  padding: 20px 30px 30px !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .notification-center-container {
+    padding: 15px;
+  }
+  
+  .notification-center-header {
+    padding: 15px 20px;
+    margin-bottom: 15px;
+  }
+  
+  .notification-center-header > div {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .header-refresh-button {
+    align-self: flex-end;
+    padding: 8px 16px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .notification-center-title .MuiSvgIcon-root {
+    font-size: 1.8rem !important;
+  }
+  
+  .notification-filters-card .MuiCardContent-root {
+    padding: 15px;
+  }
+  
+  .notification-stat-card .MuiCardContent-root {
+    padding: 12px;
+  }
+  
+  .notification-stat-number {
+    font-size: 1.5rem !important;
+  }
+  
+  .notification-sort-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .notification-sort-buttons {
+    justify-content: center;
+  }
+  
+  .notification-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .notification-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  /* Mobile filter buttons */
+  .filter-buttons-container {
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  
+  .filter-button {
+    min-width: 90px !important;
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+    height: 32px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-center-container {
+    padding: 10px;
+  }
+  
+  .notification-center-header {
+    padding: 12px 15px;
+    margin-bottom: 12px;
+  }
+  
+  .notification-center-header > div {
+    gap: 12px;
+  }
+  
+  .header-refresh-button {
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+    min-width: 80px !important;
+  }
+  
+  .notification-center-title .MuiSvgIcon-root {
+    font-size: 1.5rem !important;
+  }
+  
+  .notification-filters-card .MuiCardContent-root {
+    padding: 12px;
+  }
+  
+  .notification-item-card .MuiCardContent-root {
+    padding: 12px;
+  }
+  
+  .notification-avatar {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .notification-stat-number {
+    font-size: 1.3rem !important;
+  }
+  
+  .notification-stat-label {
+    font-size: 0.7rem !important;
+  }
+  
+  /* Small mobile filter buttons */
+  .filter-buttons-container {
+    flex-direction: row;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+  
+  .filter-button {
+    min-width: 80px !important;
+    padding: 6px 10px !important;
+    font-size: 0.7rem !important;
+    height: 30px !important;
+  }
+}
+
+/* Large screen optimizations */
+@media (min-width: 1200px) {
+  .notification-center-container {
+    padding: 30px;
+  }
+  
+  .notification-center-header {
+    padding: 25px 40px;
+  }
+  
+  .notification-filters-card .MuiCardContent-root {
+    padding: 25px;
+  }
+  
+  .notification-stat-card .MuiCardContent-root {
+    padding: 20px;
+  }
+  
+  .notification-stat-number {
+    font-size: 2rem !important;
+  }
+  
+  .notification-stat-label {
+    font-size: 0.8rem !important;
+  }
+} 
