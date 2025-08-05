@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BarChart, PieChart, LineChart } from '../../components/charts';
-import '../../styles/Reports.css';
+import './Reports.css';
 
 const ReportDetail = () => {
   const { reportId } = useParams();

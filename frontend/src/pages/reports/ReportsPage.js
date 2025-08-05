@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { BarChart, PieChart, LineChart } from '../../components/charts';
-import '../../styles/Reports.css';
+import './Reports.css';
 
 const ReportsPage = () => {
   const { user } = useAuth();

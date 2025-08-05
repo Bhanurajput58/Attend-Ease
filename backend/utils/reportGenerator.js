@@ -3,7 +3,6 @@ const XLSX = require('xlsx');
 const fs = require('fs-extra');
 const path = require('path');
 
-// Create temporary directory for reports if it doesn't exist
 const tempDir = path.join(__dirname, '../temp');
 console.log('Temp directory path:', tempDir);
 fs.ensureDirSync(tempDir);
