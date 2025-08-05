@@ -1,20 +1,337 @@
-/* Student-specific dashboard styles */
-.dashboard-container {
-  background: linear-gradient(120deg, #e3f0ff 0%, #f9fcff 100%);
+/* Student Dashboard Styles - Matching Admin/Faculty Layout */
+.student-dashboard-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  padding-bottom: 2rem;
-}
-.dashboard-content {
-  padding-top: 2rem;
-}
-.dashboard-card {
-  border-radius: 18px;
-  box-shadow: 0 2px 12px rgba(30, 136, 229, 0.08);
-  background: #fff;
-  transition: box-shadow 0.2s;
-}
-.dashboard-card:hover {
-  box-shadow: 0 4px 24px rgba(30, 136, 229, 0.16);
+  padding: 1rem 0;
 }
 
-/* Add more student-specific styles as needed */ 
+/* Header Section - More Compact */
+.student-dashboard-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.student-welcome-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.student-avatar {
+  width: 50px !important;
+  height: 50px !important;
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  font-size: 1.25rem !important;
+}
+
+.student-welcome-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.student-welcome-title {
+  font-weight: 700 !important;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.25rem !important;
+  font-size: 1.5rem !important;
+}
+
+.student-welcome-subtitle {
+  color: #666 !important;
+  font-weight: 400 !important;
+  font-size: 0.9rem !important;
+}
+
+.student-header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.student-action-button {
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  transition: all 0.3s ease !important;
+  font-size: 0.875rem !important;
+}
+
+.student-action-button.primary {
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+}
+
+.student-action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Statistics Section */
+.student-stats-section {
+  margin-bottom: 2rem;
+}
+
+.student-stat-card {
+  border-radius: 15px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.student-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.student-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.student-stat-card.attendance-overview::before {
+  background: linear-gradient(45deg, #4caf50, #66bb6a);
+}
+
+.student-stat-card.enrolled-courses::before {
+  background: linear-gradient(45deg, #2196f3, #42a5f5);
+}
+
+.student-stat-card.notifications::before {
+  background: linear-gradient(45deg, #ff9800, #ffb74d);
+}
+
+.student-stat-card.attendance-goal::before {
+  background: linear-gradient(45deg, #9c27b0, #ba68c8);
+}
+
+.student-stat-card .MuiCardContent-root {
+  padding: 1rem !important;
+}
+
+.student-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  font-size: 1.25rem;
+}
+
+.student-stat-card.attendance-overview .student-stat-icon {
+  background: linear-gradient(45deg, #4caf50, #66bb6a);
+}
+
+.student-stat-card.enrolled-courses .student-stat-icon {
+  background: linear-gradient(45deg, #2196f3, #42a5f5);
+}
+
+.student-stat-card.notifications .student-stat-icon {
+  background: linear-gradient(45deg, #ff9800, #ffb74d);
+}
+
+.student-stat-card.attendance-goal .student-stat-icon {
+  background: linear-gradient(45deg, #9c27b0, #ba68c8);
+}
+
+.student-stat-number {
+  font-weight: 700 !important;
+  color: #333 !important;
+  margin-bottom: 0.25rem !important;
+  font-size: 2rem !important;
+}
+
+.student-stat-label {
+  font-weight: 600 !important;
+  color: #555 !important;
+  margin-bottom: 0.25rem !important;
+  font-size: 0.9rem !important;
+}
+
+.student-stat-description {
+  color: #777 !important;
+  font-size: 0.8rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Goal Input Field in Stats Card */
+.student-stat-card.attendance-goal .MuiTextField-root {
+  margin-top: 0;
+}
+
+.student-stat-card.attendance-goal .MuiOutlinedInput-root {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 6px !important;
+  height: 28px !important;
+}
+
+.student-stat-card.attendance-goal .MuiOutlinedInput-root:hover {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.student-stat-card.attendance-goal .MuiOutlinedInput-root.Mui-focused {
+  background: rgba(255, 255, 255, 1) !important;
+  box-shadow: 0 2px 8px rgba(156, 39, 176, 0.2) !important;
+}
+
+.student-stat-card.attendance-goal .MuiInputBase-input {
+  font-size: 0.8rem !important;
+  padding: 4px 8px !important;
+  text-align: center !important;
+}
+
+/* Main Content */
+.student-main-content {
+  margin-bottom: 2rem;
+}
+
+.student-content-card {
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s ease !important;
+}
+
+.student-content-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.student-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  /* padding-bottom: 1rem; */
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.student-section-title {
+  font-weight: 600 !important;
+  color: #333 !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.student-section-icon {
+  color: #667eea !important;
+  font-size: 1.5rem !important;
+}
+
+.student-tab-content {
+  min-height: 300px;
+}
+
+/* Error Alert */
+.student-error-alert {
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* Attendance Table Styles */
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.attendance-table th,
+.attendance-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.attendance-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.attendance-table tr:hover {
+  background: #f8f9fa;
+}
+
+.status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status.present {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.status.absent {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.status.late {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .student-dashboard-header-section {
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+    padding: 0.75rem 1rem;
+  }
+  
+  .student-header-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .student-welcome-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  
+  .student-welcome-title {
+    font-size: 1.25rem !important;
+  }
+  
+  .student-welcome-subtitle {
+    font-size: 0.8rem !important;
+  }
+  
+  .student-section-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+} 
