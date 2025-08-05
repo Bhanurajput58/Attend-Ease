@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import './LoginPage.css';
+import './Login.css';
 
-const LoginPage = () => {
+const Login = () => {
     const navigate = useNavigate();
     const { login, loading, error, setError } = useAuth();
     const [formData, setFormData] = useState({
@@ -121,7 +121,7 @@ const LoginPage = () => {
                                 {selectedRole === 'admin' && 'Admin Login'}
                             </h2>
                             <p>
-                                {selectedRole === 'student' && 'Access your classes, attendance, and more.'}
+                                {selectedRole === 'student' && 'Access your courses, attendance, and more.'}
                                 {selectedRole === 'faculty' && 'Manage your courses and student attendance.'}
                                 {selectedRole === 'admin' && 'Administer users and oversee attendance records.'}
                             </p>
@@ -195,4 +195,4 @@ const LoginPage = () => {
     );
 };
 
-export default LoginPage;   
+export default Login;   

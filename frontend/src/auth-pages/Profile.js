@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import './ProfilePage.css';
+import './Profile.css';
 import { api } from '../config/api';
 
-const ProfilePage = () => {
+const Profile = () => {
   const { user: authUser } = useAuth();
+  const { studentId: urlStudentId } = useParams(); // Get studentId from URL params
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,6 +20,26 @@ const ProfilePage = () => {
       setLoading(true);
       setError(null);
       let endpoint = '';
+      
+      // If URL contains studentId, use it to fetch that student's profile
+      if (urlStudentId) {
+        endpoint = `/api/students/${urlStudentId}`;
+        try {
+          const res = await api.get(endpoint);
+          if (res.data.success) {
+            setProfile(res.data.data);
+            setStudentId(urlStudentId);
+          } else {
+            setError('Student profile not found');
+          }
+        } catch (err) {
+          setError('Failed to fetch student profile');
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+      
       // If we already have studentId, always use it
       if (authUser.role === 'student' && studentId) {
         endpoint = `/api/students/${studentId}`;
@@ -96,8 +118,8 @@ const ProfilePage = () => {
       }
     };
     fetchProfile();
-    // Only refetch if authUser or studentId changes
-  }, [authUser, studentId]);
+    // Only refetch if authUser, studentId, or urlStudentId changes
+  }, [authUser, studentId, urlStudentId]);
 
   if (loading) {
     return <div className="page-container"><h2>Loading...</h2></div>;
@@ -181,8 +203,12 @@ const ProfilePage = () => {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1 className="page-title">Profile</h1>
-        <button className="edit-profile-btn" onClick={handleEditClick}>Edit Profile</button>
+        <h1 className="page-title">
+          {urlStudentId ? 'Student Profile' : 'Profile'}
+        </h1>
+        {!urlStudentId && (
+          <button className="edit-profile-btn" onClick={handleEditClick}>Edit Profile</button>
+        )}
       </div>
       <div className="profile-container">
         <div className="profile-card">
@@ -192,16 +218,17 @@ const ProfilePage = () => {
             className="profile-image"
           />
           <h2>{profile.name}</h2>
-          <p className="user-role">{authUser.role.charAt(0).toUpperCase() + authUser.role.slice(1)}</p>
+          <p className="user-role">
+            {urlStudentId ? 'Student' : authUser.role.charAt(0).toUpperCase() + authUser.role.slice(1)}
+          </p>
           <div className="profile-info">
             <div><strong>Email:</strong> {profile.email}</div>
-            {profile.phone && <div><strong>Phone:</strong> {profile.phone}</div>}
             {profile.department && <div><strong>Department:</strong> {profile.department}</div>}
             {profile.designation && <div><strong>Designation:</strong> {profile.designation}</div>}
           </div>
         </div>
         <div className="profile-details">
-          {authUser.role === 'student' && (
+          {(authUser.role === 'student' || urlStudentId) && (
             <>
               <h2>Student Details</h2>
               <div><strong>Roll Number:</strong> {profile.rollNumber || 'N/A'}</div>
@@ -210,9 +237,11 @@ const ProfilePage = () => {
               <div><strong>Department:</strong> {profile.department || 'N/A'}</div>
               <div><strong>Semester:</strong> {profile.semester || 'N/A'}</div>
               <div><strong>GPA:</strong> {profile.gpa || 'N/A'}</div>
+              {profile.discipline && <div><strong>Discipline:</strong> {profile.discipline}</div>}
+              {profile.program && <div><strong>Program:</strong> {profile.program}</div>}
             </>
           )}
-          {authUser.role === 'faculty' && (
+          {authUser.role === 'faculty' && !urlStudentId && (
             <>
               <h2>Faculty Details</h2>
               <div style={{ marginBottom: '12px' }}>
@@ -230,7 +259,7 @@ const ProfilePage = () => {
               <div><strong>Courses:</strong> {profile.courses ? profile.courses.length : 0}</div>
             </>
           )}
-          {authUser.role === 'admin' && (
+          {authUser.role === 'admin' && !urlStudentId && (
             <>
               <h2>Admin Details</h2>
               <div><strong>Admin ID:</strong> {profile.adminId || 'N/A'}</div>
@@ -242,7 +271,7 @@ const ProfilePage = () => {
           )}
         </div>
       </div>
-      {isModalOpen && (
+      {isModalOpen && !urlStudentId && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>Edit Profile</h2>
@@ -330,4 +359,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage; 
+export default Profile; 

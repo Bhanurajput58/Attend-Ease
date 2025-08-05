@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0.4rem 2rem;
+  padding: 0.4rem 0.5rem 0.4rem 2rem;
   background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
   color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -29,14 +29,52 @@
 .navbar-menu {
   display: flex;
   align-items: center;
-  gap: 1rem; /* Slightly reduced gap */
+  gap: 0.25rem; /* Further reduced gap from 0.5rem to 0.25rem for very tight spacing */
 }
 
 .navbar-end {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-left: 0; /* Remove left margin so nav buttons are next to Hi, [name] */
+  margin-left: 0;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+/* Notification Bell Container */
+.notification-bell-container {
+  display: flex;
+  align-items: center;
+  margin-left: 0;
+}
+
+.notification-bell-container .MuiIconButton-root {
+  color: white;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+}
+
+.notification-bell-container .MuiIconButton-root:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.notification-bell-container .MuiBadge-badge {
+  background-color: #f44336;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  border: 1px solid #1a237e;
+}
+
+.notification-bell-container .MuiSvgIcon-root {
+  font-size: 1.1rem;
 }
 
 @media (max-width: 1200px) {
@@ -47,6 +85,23 @@
 @media (max-width: 768px) {
   .navbar-end {
     margin-left: 0;
+    margin-right: 0;
+    padding-right: 0;
+  }
+  
+  .notification-bell-container {
+    margin-left: 0;
+  }
+  
+  .notification-bell-container .MuiIconButton-root {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    padding: 3px;
+  }
+  
+  .notification-bell-container .MuiSvgIcon-root {
+    font-size: 1rem;
   }
 }
 
@@ -88,12 +143,12 @@
 }
 
 .nav-icon {
-  font-size: 1.2rem;
+  font-size: 1rem; /* Reduced icon size from 1.2rem to 1rem */
   color: white;
 }
 
 .nav-label {
-  font-size: 0.95rem;
+  font-size: 0.85rem; /* Reduced font size from 0.95rem to 0.85rem */
   font-weight: 500;
   color: white;
 }
@@ -158,7 +213,8 @@
   display: flex;
   align-items: center;
   position: relative;
-  gap: 0.7rem;
+  gap: 0.5rem;
+  margin-right: 0;
 }
 
 .student-header-hi {
@@ -232,7 +288,7 @@
 /* Responsive Design */
 @media (max-width: 900px) {
   .navbar {
-    padding: 0.4rem 1rem;
+    padding: 0.4rem 0.3rem 0.4rem 1rem;
     height: 70px;
   }
 
@@ -259,6 +315,7 @@
 @media (max-width: 480px) {
   .navbar {
     height: 60px;
+    padding: 0.4rem 0.2rem 0.4rem 1rem;
   }
 
   .logo-text {
@@ -285,6 +342,13 @@
     width: 32px;
     height: 32px;
     font-size: 1.05rem;
+  }
+  .student-header-avatar-group {
+    gap: 0.4rem;
+    margin-right: 0;
+  }
+  .notification-bell-container {
+    margin-left: 0;
   }
   .student-header-dropdown {
     min-width: 120px;

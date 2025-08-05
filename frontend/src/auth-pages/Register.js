@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import './RegisterPage.css';
+import './Register.css';
 
-const RegisterPage = () => {
+const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -329,4 +329,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default Register;

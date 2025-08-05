@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import { FaUser, FaSignOutAlt, FaHome, FaChartBar, FaCalendarAlt, FaUsers, FaCog, FaFileAlt } from 'react-icons/fa';
-import '../styles/Header.css';
+import { FaUser, FaSignOutAlt, FaHome, FaChartBar, FaCalendarAlt, FaUsers, FaCog, FaFileAlt, FaExclamationTriangle } from 'react-icons/fa';
+import NotificationBell from './NotificationBell';
+import './Header.css';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -49,6 +50,7 @@ const Header = () => {
         return [
           { path: '/faculty/dashboard', label: 'Dashboard', icon: <FaHome /> },
           { path: '/faculty/attendance', label: 'Take Attendance', icon: <FaCalendarAlt /> },
+          { path: '/attendance', label: 'Attendance Records', icon: <FaChartBar /> },
           { path: '/reports/attendance', label: 'Reports', icon: <FaFileAlt /> }
         ];
       case 'admin':
@@ -56,7 +58,7 @@ const Header = () => {
           { path: '/admin/dashboard', label: 'Dashboard', icon: <FaHome /> },
           { path: '/admin/courses', label: 'Courses', icon: <FaCalendarAlt /> },
           { path: '/admin/users', label: 'Users', icon: <FaUsers /> },
-          { path: '/admin/settings', label: 'Settings', icon: <FaCog /> }
+          { path: '/attendance', label: 'Attendance Records', icon: <FaChartBar /> }
         ];
       default:
         return [];
@@ -99,6 +101,10 @@ const Header = () => {
                   <div className="student-header-avatar" onClick={handleAvatarClick}>
                     {getInitial(user.name)}
                   </div>
+                  {/* Notification Bell - moved inside avatar group */}
+                  <div className="notification-bell-container">
+                    <NotificationBell />
+                  </div>
                   {dropdownOpen && (
                     <div className="student-header-dropdown">
                       <div
@@ -111,6 +117,15 @@ const Header = () => {
                         }}
                       >
                         <FaUser style={{ marginRight: 8 }} /> My Profile
+                      </div>
+                      <div
+                        className="student-header-dropdown-item"
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          navigate('/notifications');
+                        }}
+                      >
+                        <FaFileAlt style={{ marginRight: 8 }} /> Notifications
                       </div>
                       <div
                         className="student-header-dropdown-item logout"
