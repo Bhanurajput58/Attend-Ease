@@ -1,6 +1,5 @@
 const express = require('express');
 const {
-  getCourses,
   getCourse,
   createCourse,
   updateCourse,
@@ -8,7 +7,8 @@ const {
   addStudentToCourse,
   getCourseStudents,
   deleteAllStudentsFromCourse,
-  getAvailableCourses
+  getAvailableCourses,
+  getAllCourses
 } = require('../controllers/courses');
 const { protect, authorize } = require('../middleware/auth');
 const courseApplicationsRoutes = require('./courseApplications');
@@ -16,25 +16,27 @@ const courseApplicationsRoutes = require('./courseApplications');
 const router = express.Router();
 router.use(protect);
 
-// Base routes
+// Base routes - use getAllCourses for better data formatting
 router.route('/')
-  .get(getCourses)
+  .get(authorize('admin', 'faculty'), getAllCourses)
   .post(authorize('admin', 'faculty'), createCourse);
 
-router.use('/:id/applications', courseApplicationsRoutes);
+// Route to get all available (unassigned) courses - MUST come before /:id routes
+router.get('/available', authorize('faculty', 'admin'), getAvailableCourses);
 
-router.route('/:id')
-  .get(getCourse)
-  .put(authorize('admin', 'faculty'), updateCourse)
-  .delete(authorize('admin', 'faculty'), deleteCourse);
+// Course applications routes
+router.use('/:id/applications', courseApplicationsRoutes);
 
 // Student enrollment route
 router.route('/:id/students')
   .post(authorize('admin', 'faculty'), addStudentToCourse)
-  .get(getCourseStudents)
+  .get(authorize('admin', 'faculty'), getCourseStudents)
   .delete(authorize('admin', 'faculty'), deleteAllStudentsFromCourse);
 
-// Route to get all available (unassigned) courses
-router.get('/available', authorize('faculty', 'admin'), getAvailableCourses);
+// Individual course routes - MUST come after specific routes
+router.route('/:id')
+  .get(authorize('admin', 'faculty'), getCourse)
+  .put(authorize('admin', 'faculty'), updateCourse)
+  .delete(authorize('admin', 'faculty'), deleteCourse);
 
 module.exports = router; 

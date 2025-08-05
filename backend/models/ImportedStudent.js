@@ -10,28 +10,19 @@ const importedStudentSchema = new mongoose.Schema({
     required: [true, 'Roll number is required'],
     unique: true
   },
-  importId: {
+  email: {
     type: String,
-    sparse: true  // Allows null values while keeping uniqueness
+    default: null,
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please add a valid email']
   },
   discipline: {
     type: String,
     default: 'Not Specified'
   },
-  program: {
-    type: String,
-    default: 'B.tech'
-  },
-
-  semester: {
-    type: Number,
-    default: 4
-  },
   courses: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course'
   }],
-  // Import metadata
   importedFrom: {
     fileName: String,
     importDate: {
@@ -71,8 +62,29 @@ const importedStudentSchema = new mongoose.Schema({
   }
 });
 
+// Post-save middleware to update courses collection
+importedStudentSchema.post('save', async function(doc) {
+  try {
+    const Course = mongoose.model('Course');
+    if (doc.courses && doc.courses.length > 0) {
+      for (const courseId of doc.courses) {
+        await Course.findByIdAndUpdate(
+          courseId,
+          { $addToSet: { students: doc._id } },
+          { new: true }
+        );
+        console.log(`Added student ${doc._id} to course ${courseId}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error updating courses after student save:', error);
+  }
+});
+
 // Static method to handle bulk imports from Excel
 importedStudentSchema.statics.importFromExcel = async function(students, courseId, userId, fileName) {
+  const Course = mongoose.model('Course');
+  
   const operations = students.map(student => ({
     updateOne: {
       filter: { rollNumber: student.rollNumber },
@@ -80,9 +92,6 @@ importedStudentSchema.statics.importFromExcel = async function(students, courseI
         $set: {
           name: student.name,
           discipline: student.discipline || 'Not Specified',
-          program: student.program || 'B.tech',
-          semester: student.semester || 4,
-          importId: student.id?.toString(),
           'importedFrom.fileName': fileName,
           'importedFrom.importDate': new Date(),
           'importedFrom.importedBy': userId
@@ -91,11 +100,30 @@ importedStudentSchema.statics.importFromExcel = async function(students, courseI
           courses: courseId
         }
       },
-      upsert: true // Create if doesn't exist
+      upsert: true
     }
   }));
 
-  return this.bulkWrite(operations);
+  const result = await this.bulkWrite(operations);
+  
+  if (courseId && result.upsertedCount > 0) {
+    try {
+      const courseStudents = await this.find({ courses: courseId }, { _id: 1 });
+      const studentIds = courseStudents.map(student => student._id);
+      
+      await Course.findByIdAndUpdate(
+        courseId,
+        { $addToSet: { students: { $each: studentIds } } },
+        { new: true }
+      );
+      
+      console.log(`Updated course ${courseId} with ${studentIds.length} students after import`);
+    } catch (error) {
+      console.error('Error updating course after bulk import:', error);
+    }
+  }
+  
+  return result;
 };
 
 // Update attendance stats for a student
@@ -103,13 +131,11 @@ importedStudentSchema.statics.updateAttendanceStats = async function(studentId, 
   const student = await this.findById(studentId);
   if (!student) return null;
 
-  // Add the course to the student's courses array if not already present
   if (!student.courses.includes(courseId)) {
     student.courses.push(courseId);
     console.log(`Added course ${courseId} to student ${studentId}'s courses`);
   }
 
-  // Find or create stats for this course
   let stats = student.attendanceStats.find(stat => 
     stat.course && stat.course.toString() === courseId.toString()
   );
@@ -126,7 +152,6 @@ importedStudentSchema.statics.updateAttendanceStats = async function(studentId, 
     console.log(`Created new attendance stats entry for student ${studentId} and course ${courseId}`);
   }
 
-  // Update stats based on status
   if (status === 'present') {
     stats.present += 1;
     console.log(`Incremented present count for student ${studentId}, course ${courseId}`);
@@ -143,66 +168,8 @@ importedStudentSchema.statics.updateAttendanceStats = async function(studentId, 
   return student.save();
 };
 
-// Static method to find a student by roll number or create if doesn't exist
-importedStudentSchema.statics.findOrCreateByRollNumber = async function(rollNumber, name, discipline, courseId) {
-  // Try to find by roll number first
-  let student = await this.findOne({ rollNumber: rollNumber });
-  
-  // If student exists, update their info if needed
-  if (student) {
-    let updated = false;
-    
-    // Only update name if current is placeholder and new is better
-    if (name && name !== 'Unknown' && name !== 'Student' && 
-        (student.name === 'Student' || student.name === 'Unknown')) {
-      student.name = name;
-      updated = true;
-    }
-    
-    // Only update discipline if current is default and new is better
-    if (discipline && discipline !== 'Not Specified' && 
-        student.discipline === 'Not Specified') {
-      student.discipline = discipline;
-      updated = true;
-    }
-    
-    // If the roll number starts with AUTO- and we have a better one, update it
-    if (student.rollNumber.startsWith('AUTO-') && rollNumber && !rollNumber.startsWith('AUTO-')) {
-      student.rollNumber = rollNumber;
-      updated = true;
-    }
-    
-    // Ensure student is associated with this course
-    if (courseId && !student.courses.includes(courseId)) {
-      student.courses.push(courseId);
-      updated = true;
-    }
-    
-    if (updated) {
-      await student.save();
-      console.log(`Updated existing student: ${student._id}`);
-    }
-    
-    return student;
-  }
-  
-  // Create new student if not found
-  const newStudent = await this.create({
-    name: name || 'Unknown',
-    rollNumber: rollNumber,
-    discipline: discipline || 'Not Specified',
-    program: 'B.tech',
-    semester: 4,
-    courses: courseId ? [courseId] : []
-  });
-  
-  console.log(`Created new student with roll number ${rollNumber}`);
-  return newStudent;
-};
-
 // Create indices for better query performance
 importedStudentSchema.index({ rollNumber: 1 }, { unique: true });
-importedStudentSchema.index({ importId: 1 });
 importedStudentSchema.index({ 'courses': 1 });
 
 module.exports = mongoose.model('ImportedStudent', importedStudentSchema); 

@@ -6,11 +6,9 @@ const jwt = require('jsonwebtoken');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 const dotenv = require('dotenv');
-require('dotenv').config();
 const User = require('./models/User');
 const logger = require('./middleware/logger');
 const cookieParser = require('cookie-parser');
-const courseApplicationsRoutes = require('./routes/courseApplications');
 
 dotenv.config();
 const app = express();
@@ -34,7 +32,17 @@ connectDB()
         for (const course of demoCourses) {
           const existingCourse = await Course.findById(course.id);
           if (!existingCourse) {
-            await Course.create({ _id: course.id, courseCode: course.code, courseName: course.name, faculty: facultyUser._id, semester: course.semester, department: course.department, students: [] });
+            await Course.create({ 
+              _id: course.id, 
+              courseCode: course.code, 
+              courseName: course.name, 
+              faculty: facultyUser._id, 
+              instructor: facultyUser._id, // Also set instructor field
+              assigned: true, // Set assigned to true when instructor is assigned
+              semester: course.semester, 
+              department: course.department, 
+              students: [] 
+            });
           }
         }
       } catch {}
@@ -136,33 +144,22 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // API routes
+console.log('Loading API routes...');
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/courses', require('./routes/courses'));
+console.log('Courses route loaded');
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/faculty', require('./routes/faculty'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/faculties', require('./routes/faculties'));
 app.use('/api/admins', require('./routes/admins'));
-
-// Also mount routes without /api prefix
-const authRoutes = require('./routes/auth');
-const attendanceRoutes = require('./routes/attendance');
-const studentsRoutes = require('./routes/students');
-const facultyRoutes = require('./routes/faculty');
-const adminRoutes = require('./routes/admin');
-const facultiesRoutes = require('./routes/faculties');
-const adminsRoutes = require('./routes/admins');
-['/api', ''].forEach(prefix => {
-  app.use(`${prefix}/auth`, authRoutes);
-  app.use(`${prefix}/attendance`, attendanceRoutes);
-  app.use(`${prefix}/students`, studentsRoutes);
-  app.use(`${prefix}/faculty`, facultyRoutes);
-  app.use(`${prefix}/admin`, adminRoutes);
-  app.use(`${prefix}/faculties`, facultiesRoutes);
-  app.use(`${prefix}/admins`, adminsRoutes);
-});
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/statistics', require('./routes/statistics'));
+app.use('/api/contact', require('./routes/contact'));
+app.use('/api/newsletter', require('./routes/newsletter'));
+console.log('All API routes loaded');
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Attend-Ease API' });
@@ -179,6 +176,26 @@ app.get('/api/test-db', async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: 'Database connection error', error: error.message });
   }
+});
+
+// Test route to verify server is working
+app.get('/api/test-routes', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Server routes are working',
+    timestamp: new Date().toISOString(),
+    routes: ['/api/courses', '/api/courses/:id/applications']
+  });
+});
+
+// Test attendance route
+app.get('/api/test-attendance', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Attendance routes are accessible',
+    timestamp: new Date().toISOString(),
+    availableRoutes: ['/api/attendance/faculty', '/api/attendance/student']
+  });
 });
 
 // Error handler

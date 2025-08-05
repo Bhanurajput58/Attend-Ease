@@ -14,12 +14,15 @@ const courseSchema = new mongoose.Schema({
   },
   faculty: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    ref: 'User'
   },
   instructor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  assigned: {
+    type: Boolean,
+    default: false
   },
   students: [{
     type: mongoose.Schema.Types.ObjectId,

@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const studentSchema = new mongoose.Schema({
-  
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -28,23 +27,11 @@ const studentSchema = new mongoose.Schema({
   },
   semester: {
     type: Number,
-    default: 1
-  },
-  enrollmentDate: {
-    type: Date,
-    default: Date.now
+    default: 4
   },
   rollNumber: {
     type: String,
     required: true
-  },
-  currentSemester: {
-    type: Number,
-    default: 1
-  },
-  major: {
-    type: String,
-    default: 'Not Specified'
   },
   gpa: {
     type: Number,
@@ -74,20 +61,19 @@ const studentSchema = new mongoose.Schema({
       }
     }
   ],
+  attendanceGoal: {
+    type: Number,
+    default: 90,
+    min: 0,
+    max: 100
+  },
+  courses: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course'
+  }],
   createdAt: {
     type: Date,
     default: Date.now
-  },
-  excelImportId: {
-    type: String,
-    sparse: true  // Allows null/undefined values while still maintaining uniqueness
-  },
-  importedFrom: {
-    fileName: String,
-    importDate: {
-      type: Date,
-      default: Date.now
-    }
   }
 });
 
@@ -103,13 +89,6 @@ studentSchema.pre('save', async function(next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     console.log('Password hashed successfully');
-    
-    // Generate a student ID if not provided
-    if (!this.studentId) {
-      const currentYear = new Date().getFullYear().toString().substr(-2);
-      const randomId = Math.floor(10000 + Math.random() * 90000);
-      this.studentId = `S${currentYear}${randomId}`;
-    }
     
     // Generate a unique roll number before saving
     if (this.isNew) {
@@ -152,26 +131,6 @@ studentSchema.methods.matchPassword = async function(enteredPassword) {
     console.error('Error comparing passwords:', error);
     return false;
   }
-};
-
-// Static method to handle bulk imports from Excel
-studentSchema.statics.importFromExcel = async function(students, courseId) {
-  const operations = students.map(student => ({
-    updateOne: {
-      filter: { rollNumber: student.rollNumber },
-      update: {
-        $set: {
-          name: student.name,
-          department: student.department || 'Not Specified',
-          excelImportId: student.id,
-          'importedFrom.fileName': student.fileName
-        }
-      },
-      upsert: true // Create if doesn't exist
-    }
-  }));
-
-  return this.bulkWrite(operations);
 };
 
 // Create a compound index for rollNumber to ensure uniqueness but allow for nulls

@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 const { protect, authorize } = require('../middleware/auth');
 const CourseApplication = require('../models/CourseApplication');
 const Course = require('../models/Course');
@@ -11,11 +11,16 @@ router.post('/apply', protect, authorize('faculty'), async (req, res) => {
   try {
     const courseId = req.params.id;
     const facultyId = req.user.id;
+    
     const existing = await CourseApplication.findOne({ course: courseId, faculty: facultyId });
-    if (existing) return res.status(400).json({ success: false, message: 'Already applied for this course.' });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Already applied for this course.' });
+    }
+    
     const facultyUser = await require('../models/User').findById(facultyId);
     const facultyDoc = await Faculty.findOne({ user: facultyId });
     const courseObj = await Course.findById(courseId);
+    
     const application = await CourseApplication.create({
       course: courseId,
       faculty: facultyId,
@@ -24,7 +29,26 @@ router.post('/apply', protect, authorize('faculty'), async (req, res) => {
       facultyDepartment: facultyDoc?.department || facultyUser?.department || facultyUser?.roleData?.department || '',
       courseName: courseObj?.courseName || courseObj?.name || ''
     });
+    
     res.status(201).json({ success: true, data: application });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+});
+
+// Faculty withdraws application for a course
+router.post('/withdraw', protect, authorize('faculty'), async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const facultyId = req.user.id;
+    
+    const application = await CourseApplication.findOne({ course: courseId, faculty: facultyId });
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'No application found for this course.' });
+    }
+    
+    await CourseApplication.findByIdAndDelete(application._id);
+    res.json({ success: true, message: 'Application withdrawn successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
@@ -34,30 +58,27 @@ router.post('/apply', protect, authorize('faculty'), async (req, res) => {
 router.get('/', protect, authorize('admin'), async (req, res) => {
   try {
     const courseId = new mongoose.Types.ObjectId(req.params.id);
-    const applications = await CourseApplication.find({ course: courseId, status: 'pending' })
+    
+    const applications = await CourseApplication.find({ course: courseId })
       .populate('faculty', 'name email department designation');
+    
     res.json({ success: true, data: applications });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
 });
 
-// Admin assigns course to a faculty (and approves application)
-router.post('/assign', protect, authorize('admin'), async (req, res) => {
+// Get a single course application by its _id
+router.get('/:appId', protect, authorize('admin'), async (req, res) => {
   try {
-    const courseId = req.params.id;
-    const { facultyId } = req.body;
-    const application = await CourseApplication.findOne({ course: courseId, faculty: facultyId, status: 'pending' });
-    if (!application) return res.status(400).json({ success: false, message: 'No pending application from this faculty.' });
-    const course = await Course.findByIdAndUpdate(courseId, { instructor: facultyId, assigned: true }, { new: true });
-    if (!course) return res.status(404).json({ success: false, message: 'Course not found.' });
-    application.status = 'approved';
-    await application.save();
-    await CourseApplication.updateMany(
-      { course: courseId, status: 'pending', _id: { $ne: application._id } },
-      { $set: { status: 'rejected' } }
-    );
-    res.json({ success: true, data: course });
+    const application = await CourseApplication.findById(req.params.appId)
+      .populate('faculty', 'name email department designation');
+    
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+    
+    res.json({ success: true, data: application });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
@@ -67,12 +88,23 @@ router.post('/assign', protect, authorize('admin'), async (req, res) => {
 router.post('/unassign', protect, authorize('admin'), async (req, res) => {
   try {
     const courseId = req.params.id;
-    const course = await Course.findByIdAndUpdate(courseId, { instructor: null, assigned: false }, { new: true });
-    if (!course) return res.status(404).json({ success: false, message: 'Course not found.' });
+    
+    const course = await Course.findByIdAndUpdate(
+      courseId, 
+      { instructor: null, assigned: false }, 
+      { new: true }
+    );
+    
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Course not found.' });
+    }
+    
+    // Update all applications for this course to rejected status
     await CourseApplication.updateMany(
-      { course: courseId, status: 'pending' },
+      { course: courseId },
       { $set: { status: 'rejected' } }
     );
+    
     res.json({ success: true, data: course });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });

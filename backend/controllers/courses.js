@@ -1,5 +1,40 @@
 const Course = require('../models/Course');
 
+
+exports.getAllCourses = async (req, res) => {
+  try {
+    const courses = await Course.find({})
+      .populate('instructor', 'name email')
+      .populate('students', 'name studentId rollNumber')
+      .select('courseName name courseCode code department semester students instructor');
+    
+    const formattedCourses = courses.map(course => ({
+      _id: course._id,
+      courseName: course.courseName || course.name || 'Unknown Course',
+      name: course.courseName || course.name || 'Unknown Course',
+      courseCode: course.courseCode || course.code || 'Unknown Code',
+      code: course.courseCode || course.code || 'Unknown Code',
+      department: course.department,
+      semester: course.semester,
+      students: course.students || [],
+      instructor: course.instructor
+    }));
+    
+    res.status(200).json({
+      success: true,
+      count: formattedCourses.length,
+      data: formattedCourses
+    });
+  } catch (error) {
+    console.error('Error fetching all courses:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server Error', 
+      error: error.message 
+    });
+  }
+};
+
 exports.createCourse = async (req, res) => {
   try {
     const courseData = { ...req.body };
@@ -7,18 +42,6 @@ exports.createCourse = async (req, res) => {
     if (!('instructor' in courseData)) delete courseData.instructor;
     const course = await Course.create(courseData);
     res.status(201).json({ success: true, data: course });
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
-  }
-};
-
-exports.getCourses = async (req, res) => {
-  try {
-    let query = {};
-    if (req.query.assigned === 'false') query.assigned = false;
-    else if (req.query.assigned === 'true') query.assigned = true;
-    const courses = await Course.find(query).populate('instructor', 'name email');
-    res.json({ success: true, count: courses.length, data: courses });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -40,11 +63,73 @@ exports.updateCourse = async (req, res) => {
   try {
     let course = await Course.findById(req.params.id);
     if (!course) return res.status(404).json({ message: 'Course not found' });
-    if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin')
+    
+    // Allow admins to update any course, or instructors to update their own courses
+    if (req.user.role !== 'admin' && course.instructor && course.instructor.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized to update this course' });
+    }
+    
+    // If this is an admin assigning a faculty member
+    if (req.user.role === 'admin' && req.body.instructor) {
+      const CourseApplication = require('../models/CourseApplication');
+      
+      // Find any application for this faculty and course (pending or rejected)
+      const application = await CourseApplication.findOne({ 
+        course: req.params.id, 
+        faculty: req.body.instructor
+      });
+      
+      if (application) {
+        // Update the application status to approved
+        application.status = 'approved';
+        await application.save();
+        
+        // Reject all other applications for this course
+        await CourseApplication.updateMany(
+          { 
+            course: req.params.id, 
+            _id: { $ne: application._id } 
+          },
+          { $set: { status: 'rejected' } }
+        );
+      } else {
+        // If no application exists, create one with approved status
+        const facultyUser = await require('../models/User').findById(req.body.instructor);
+        const courseObj = await Course.findById(req.params.id);
+        await CourseApplication.create({
+          course: req.params.id,
+          faculty: req.body.instructor,
+          facultyName: facultyUser?.name || '',
+          facultyEmail: facultyUser?.email || '',
+          facultyDepartment: facultyUser?.department || '',
+          courseName: courseObj?.courseName || courseObj?.name || '',
+          status: 'approved'
+        });
+      }
+      
+      // Set the course as assigned
+      req.body.assigned = true;
+    }
+    
+    // If this is an admin unassigning a faculty member (setting instructor to null)
+    if (req.user.role === 'admin' && req.body.instructor === null) {
+      const CourseApplication = require('../models/CourseApplication');
+      
+      // Reject all applications for this course
+      await CourseApplication.updateMany(
+        { course: req.params.id },
+        { $set: { status: 'rejected' } }
+      );
+      
+      // Set the course as unassigned and clear both instructor and faculty fields
+      req.body.assigned = false;
+      req.body.faculty = null; // Also clear the faculty field to ensure consistency
+    }
+    
     course = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     res.json({ success: true, data: course });
   } catch (error) {
+    console.error('Error updating course:', error);
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
@@ -55,7 +140,7 @@ exports.deleteCourse = async (req, res) => {
     if (!course) return res.status(404).json({ message: 'Course not found' });
     if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin')
       return res.status(403).json({ message: 'Not authorized to delete this course' });
-    await course.remove();
+    await Course.findByIdAndDelete(req.params.id);
     res.json({ success: true, data: {} });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -155,7 +240,28 @@ exports.deleteAllStudentsFromCourse = async (req, res) => {
 
 exports.getAvailableCourses = async (req, res) => {
   try {
-    const courses = await Course.find().select('_id courseName courseCode department semester');
+    const facultyId = req.user.id;
+    
+    // Get courses that are NOT assigned to the current faculty
+    // This should exclude courses where instructor = current faculty ID
+    const courses = await Course.find({
+      $and: [
+        // Course must not be assigned to the current faculty
+        { instructor: { $ne: facultyId } },
+        // Course must either be unassigned or assigned to someone else
+        {
+          $or: [
+            // Courses that are not assigned to anyone
+            { assigned: false },
+            { assigned: { $exists: false } },
+            // Courses where instructor is null or doesn't exist
+            { instructor: null },
+            { instructor: { $exists: false } }
+          ]
+        }
+      ]
+    }).select('_id courseName courseCode department semester');
+    
     res.json({ success: true, data: courses });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
