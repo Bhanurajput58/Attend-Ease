@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container, Grid, Typography, Button, Menu, MenuItem, IconButton, Divider, Paper, CircularProgress } from '@mui/material';
+import { 
+  Box, 
+  Container, 
+  Grid, 
+  Typography, 
+  Button, 
+  Menu, 
+  MenuItem, 
+  Divider, 
+  Paper, 
+  CircularProgress,
+  Card,
+  CardContent,
+  CardActions,
+  Chip,
+  Alert,
+  Stack
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import GetAppIcon from '@mui/icons-material/GetApp';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -9,10 +26,14 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InfoIcon from '@mui/icons-material/Info';
+import SchoolIcon from '@mui/icons-material/School';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import DownloadIcon from '@mui/icons-material/Download';
 import useAuth from '../../hooks/useAuth';
 import { API_ENDPOINTS } from '../../config/api';
 import API_BASE_URL from '../../config/api';
 import axios from 'axios';
+import './AttendanceReportsPage.css';
 
 /**
  * Attendance Reports Page Component
@@ -282,7 +303,7 @@ const AttendanceReportsPage = () => {
       // to return data if available or empty report if not
       
       // Construct the export endpoint URL with date range
-      const endpoint = `${API_BASE_URL}/attendance/export?format=${selectedFormat}&courseId=${selectedCourse}&startDate=${encodeURIComponent(startDate.toISOString())}&endDate=${encodeURIComponent(endDate.toISOString())}`;
+      const endpoint = `${API_BASE_URL}/api/attendance/export?format=${selectedFormat}&courseId=${selectedCourse}&startDate=${encodeURIComponent(startDate.toISOString())}&endDate=${encodeURIComponent(endDate.toISOString())}`;
       console.log('Export endpoint URL:', endpoint);
 
       // Use Fetch API with proper blob handling
@@ -350,129 +371,112 @@ const AttendanceReportsPage = () => {
     }
   };
 
-  // Render Quick Export Options section
-  const renderQuickExportOptions = () => {
-    return (
-      <Paper className="dashboard-card">
-        <Box sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Quick Export Options
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Choose from common report formats for each course
-          </Typography>
-          
-          <Grid container spacing={2}>
-            {coursesList.length > 0 ? (
-              coursesList.map((course) => (
-                <Grid item xs={12} md={6} lg={4} key={course.id}>
-                  <Paper sx={{ p: 2, border: '1px solid #e0e0e0', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold', minHeight: '48px', display: 'flex', alignItems: 'center' }}>
-                      {course.name}
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 'auto' }}>
-                      <Button 
-                        variant="outlined" 
-                        size="small"
-                        onClick={() => {
-                          setSelectedPeriod('daily');
-                          setSelectedFormat('pdf');
-                          setSelectedCourse(course.id);
-                          setTimeout(handleExportReport, 100);
-                        }}
-                      >
-                        Today (PDF)
-                      </Button>
-                      <Button 
-                        variant="outlined" 
-                        size="small"
-                        onClick={() => {
-                          setSelectedPeriod('weekly');
-                          setSelectedFormat('excel');
-                          setSelectedCourse(course.id);
-                          setTimeout(handleExportReport, 100);
-                        }}
-                      >
-                        Weekly (Excel)
-                      </Button>
-                      <Button 
-                        variant="outlined" 
-                        size="small"
-                        onClick={() => {
-                          setSelectedPeriod('monthly');
-                          setSelectedFormat('pdf');
-                          setSelectedCourse(course.id);
-                          setTimeout(handleExportReport, 100);
-                        }}
-                      >
-                        Monthly (PDF)
-                      </Button>
-                    </Box>
-                  </Paper>
-                </Grid>
-              ))
-            ) : (
-              <Grid item xs={12}>
-                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                  No courses found. Please check your course assignments.
-                </Typography>
-              </Grid>
-            )}
-          </Grid>
-        </Box>
-      </Paper>
-    );
+  // Get period icon
+  const getPeriodIcon = (period) => {
+    switch(period) {
+      case 'daily': return <CalendarTodayIcon />;
+      case 'weekly': return <ViewWeekIcon />;
+      case 'monthly': return <DateRangeIcon />;
+      case 'semester': return <DateRangeIcon />;
+      default: return <CalendarTodayIcon />;
+    }
   };
 
-  return (
-    <div className="dashboard-container">
-      <div className="dashboard-content">
+  // Get period label
+  const getPeriodLabel = (period) => {
+    switch(period) {
+      case 'daily': return 'Daily';
+      case 'weekly': return 'Weekly';
+      case 'monthly': return 'Monthly';
+      case 'semester': return 'Semester';
+      default: return 'Daily';
+    }
+  };
+
+  // Get format icon
+  const getFormatIcon = (format) => {
+    return format === 'pdf' ? <PictureAsPdfIcon /> : <TableChartIcon />;
+  };
+
+  // Get format label
+  const getFormatLabel = (format) => {
+    return format === 'pdf' ? 'PDF' : 'Excel';
+  };
+
+  if (loading) {
+    return (
+      <div className="attendance-reports-container">
         <Container maxWidth="lg">
-          <Box sx={{ mt: 4, mb: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              Attendance Reports
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-              Generate and export attendance reports in various formats
+          <Box className="loading-container">
+            <CircularProgress size={60} />
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Loading Reports...
             </Typography>
           </Box>
+        </Container>
+      </div>
+    );
+  }
 
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : error ? (
-            <Box sx={{ textAlign: 'center', my: 4, color: 'error.main' }}>
-              <Typography variant="h6">{error}</Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Using fallback options with mock data
+  return (
+    <div className="attendance-reports-container">
+      <Container maxWidth="lg">
+        {/* Header Section */}
+        <Box className="reports-header">
+          <Box className="header-content">
+            <Box className="header-text">
+              <Typography variant="h3" className="page-title">
+                Attendance Reports
+              </Typography>
+              <Typography variant="subtitle1" className="page-subtitle">
+                Generate and export comprehensive attendance reports for your courses
               </Typography>
             </Box>
-          ) : (
-            <Grid container spacing={3}>
-              {/* Custom Report Builder */}
-              <Grid item xs={12}>
-                <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Custom Report Builder
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Generate attendance reports by selecting options below
-                    </Typography>
-                    
-                   
-                    
-                    <Grid container spacing={2} alignItems="center">
-                      {/* Format Selection */}
-                      <Grid item xs={12} md={4}>
+            <Box className="header-icon">
+              <AssessmentIcon className="header-icon-svg" />
+            </Box>
+          </Box>
+        </Box>
+
+        {error && (
+          <Alert severity="warning" className="error-alert">
+            <Typography variant="body2">
+              {error} - Using fallback options with mock data
+            </Typography>
+          </Alert>
+        )}
+
+        <Grid container spacing={3}>
+          {/* Custom Report Builder */}
+          <Grid item xs={12} lg={8}>
+            <Card className="report-card">
+              <CardContent>
+                <Box className="card-header">
+                  <Typography variant="h5" className="card-title">
+                    <GetAppIcon className="card-icon" />
+                    Custom Report Builder
+                  </Typography>
+                  <Typography variant="body2" className="card-description">
+                    Create personalized attendance reports by selecting your preferred options
+                  </Typography>
+                </Box>
+
+                <Box className="report-builder">
+                  <Grid container spacing={2}>
+                    {/* Format Selection */}
+                    <Grid item xs={12} sm={4}>
+                      <Box className="selection-group">
+                        <Typography variant="subtitle2" className="selection-label">
+                          Report Format
+                        </Typography>
                         <Button
                           fullWidth
                           variant="outlined"
                           onClick={handleFormatMenuOpen}
-                          startIcon={selectedFormat === 'pdf' ? <PictureAsPdfIcon /> : <TableChartIcon />}
+                          startIcon={getFormatIcon(selectedFormat)}
+                          className="selection-button"
                         >
-                          {selectedFormat === 'pdf' ? 'PDF' : 'Excel'}
+                          {getFormatLabel(selectedFormat)}
                         </Button>
                         <Menu
                           anchorEl={formatMenuAnchor}
@@ -481,30 +485,30 @@ const AttendanceReportsPage = () => {
                         >
                           <MenuItem onClick={() => handleFormatSelect('pdf')}>
                             <PictureAsPdfIcon fontSize="small" sx={{ mr: 1 }} />
-                            PDF
+                            PDF Report
                           </MenuItem>
                           <MenuItem onClick={() => handleFormatSelect('excel')}>
                             <TableChartIcon fontSize="small" sx={{ mr: 1 }} />
-                            Excel
+                            Excel Report
                           </MenuItem>
                         </Menu>
-                      </Grid>
-                      
-                      {/* Time Period Selection */}
-                      <Grid item xs={12} md={4}>
+                      </Box>
+                    </Grid>
+                    
+                    {/* Time Period Selection */}
+                    <Grid item xs={12} sm={4}>
+                      <Box className="selection-group">
+                        <Typography variant="subtitle2" className="selection-label">
+                          Time Period
+                        </Typography>
                         <Button
                           fullWidth
                           variant="outlined"
                           onClick={handlePeriodMenuOpen}
-                          startIcon={
-                            selectedPeriod === 'daily' ? <CalendarTodayIcon /> : 
-                            selectedPeriod === 'weekly' ? <ViewWeekIcon /> : 
-                            <DateRangeIcon />
-                          }
+                          startIcon={getPeriodIcon(selectedPeriod)}
+                          className="selection-button"
                         >
-                          {selectedPeriod === 'daily' ? 'Daily Report' : 
-                           selectedPeriod === 'weekly' ? 'Weekly Report' : 
-                           selectedPeriod === 'monthly' ? 'Monthly Report' : 'Semester Report'}
+                          {getPeriodLabel(selectedPeriod)}
                         </Button>
                         <Menu
                           anchorEl={periodMenuAnchor}
@@ -528,14 +532,21 @@ const AttendanceReportsPage = () => {
                             Semester Report
                           </MenuItem>
                         </Menu>
-                      </Grid>
-                      
-                      {/* Course Selection */}
-                      <Grid item xs={12} md={4}>
+                      </Box>
+                    </Grid>
+                    
+                    {/* Course Selection */}
+                    <Grid item xs={12} sm={4}>
+                      <Box className="selection-group">
+                        <Typography variant="subtitle2" className="selection-label">
+                          Course Selection
+                        </Typography>
                         <Button
                           fullWidth
                           variant="outlined"
                           onClick={handleCourseMenuOpen}
+                          startIcon={<SchoolIcon />}
+                          className="selection-button"
                         >
                           {selectedCourse === 'all' ? 'All Courses' : 
                            coursesList.find(c => c.id === selectedCourse)?.name || 'Select Course'}
@@ -559,55 +570,225 @@ const AttendanceReportsPage = () => {
                             <MenuItem disabled>No courses available</MenuItem>
                           )}
                         </Menu>
-                      </Grid>
-                      
-                      {/* Generate Report Button */}
-                      <Grid item xs={12} sx={{ mt: 2 }}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          startIcon={<GetAppIcon />}
-                          onClick={handleExportReport}
-                          disabled={exportLoading}
-                          size="large"
-                          sx={{ px: 4 }}
-                        >
-                          {exportLoading ? 'Generating Report...' : 'Generate Report'}
-                        </Button>
-                      </Grid>
+                      </Box>
                     </Grid>
+                  </Grid>
+
+                  {/* Generate Report Button */}
+                  <Box className="generate-section">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={exportLoading ? <CircularProgress size={20} /> : <DownloadIcon />}
+                      onClick={handleExportReport}
+                      disabled={exportLoading}
+                      size="large"
+                      className="generate-button"
+                    >
+                      {exportLoading ? 'Generating Report...' : 'Generate Report'}
+                    </Button>
                   </Box>
-                </Paper>
-              </Grid>
-              
-              {/* Quick Export Options */}
-              <Grid item xs={12}>
-                {renderQuickExportOptions()}
-              </Grid>
-              
-              {/* Report Templates */}
-              <Grid item xs={12}>
-                <Paper className="dashboard-card">
-                  <Box sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Report Instructions
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <ul>
-                        <li><strong>Daily Reports</strong>: Show attendance for the current day, including present/absent counts and percentages.</li>
-                        <li><strong>Weekly Reports</strong>: Provide a 7-day overview of attendance trends.</li>
-                        <li><strong>Monthly Reports</strong>: Give a comprehensive view of attendance patterns over the past month.</li>
-                        <li><strong>Semester Reports</strong>: Show the complete attendance record for the semester (past 6 months).</li>
-                      </ul>
-                      <p>Reports can be downloaded in either PDF format (for printing and sharing) or Excel format (for further analysis).</p>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Quick Actions Sidebar */}
+          <Grid item xs={12} lg={4}>
+            <Card className="report-card">
+              <CardContent>
+                <Box className="card-header">
+                  <Typography variant="h6" className="card-title">
+                    <AssessmentIcon className="card-icon" />
+                    Quick Actions
+                  </Typography>
+                </Box>
+                
+                <Stack spacing={2}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<PictureAsPdfIcon />}
+                    onClick={() => {
+                      setSelectedPeriod('daily');
+                      setSelectedFormat('pdf');
+                      setSelectedCourse('all');
+                      setTimeout(handleExportReport, 100);
+                    }}
+                    className="quick-action-button"
+                  >
+                    Today's Report (PDF)
+                  </Button>
+                  
+                  <Button
+                    variant="outlined"
+                    startIcon={<TableChartIcon />}
+                    onClick={() => {
+                      setSelectedPeriod('weekly');
+                      setSelectedFormat('excel');
+                      setSelectedCourse('all');
+                      setTimeout(handleExportReport, 100);
+                    }}
+                    className="quick-action-button"
+                  >
+                    Weekly Summary (Excel)
+                  </Button>
+                  
+                  <Button
+                    variant="outlined"
+                    startIcon={<PictureAsPdfIcon />}
+                    onClick={() => {
+                      setSelectedPeriod('monthly');
+                      setSelectedFormat('pdf');
+                      setSelectedCourse('all');
+                      setTimeout(handleExportReport, 100);
+                    }}
+                    className="quick-action-button"
+                  >
+                    Monthly Report (PDF)
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Course-Specific Quick Export */}
+          <Grid item xs={12}>
+            <Card className="report-card">
+              <CardContent>
+                <Box className="card-header">
+                  <Typography variant="h5" className="card-title">
+                    <SchoolIcon className="card-icon" />
+                    Course-Specific Reports
+                  </Typography>
+                  <Typography variant="body2" className="card-description">
+                    Generate reports for individual courses with one click
+                  </Typography>
+                </Box>
+                
+                {coursesList.length > 0 ? (
+                  <Grid container spacing={2}>
+                    {coursesList.map((course) => (
+                      <Grid item xs={12} sm={6} md={4} key={course.id}>
+                        <Card className="course-card">
+                          <CardContent>
+                            <Typography variant="h6" className="course-name">
+                              {course.name}
+                            </Typography>
+                            <Box className="course-actions">
+                              <Button 
+                                variant="outlined" 
+                                size="small"
+                                startIcon={<PictureAsPdfIcon />}
+                                onClick={() => {
+                                  setSelectedPeriod('daily');
+                                  setSelectedFormat('pdf');
+                                  setSelectedCourse(course.id);
+                                  setTimeout(handleExportReport, 100);
+                                }}
+                                className="course-action-button"
+                              >
+                                Today (PDF)
+                              </Button>
+                              <Button 
+                                variant="outlined" 
+                                size="small"
+                                startIcon={<TableChartIcon />}
+                                onClick={() => {
+                                  setSelectedPeriod('weekly');
+                                  setSelectedFormat('excel');
+                                  setSelectedCourse(course.id);
+                                  setTimeout(handleExportReport, 100);
+                                }}
+                                className="course-action-button"
+                              >
+                                Weekly (Excel)
+                              </Button>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box className="empty-state">
+                    <SchoolIcon className="empty-icon" />
+                    <Typography variant="body2" className="empty-text">
+                      No courses found. Please check your course assignments.
                     </Typography>
                   </Box>
-                </Paper>
-              </Grid>
-            </Grid>
-          )}
-        </Container>
-      </div>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Report Instructions */}
+          <Grid item xs={12}>
+            <Card className="report-card">
+              <CardContent>
+                <Box className="card-header">
+                  <Typography variant="h5" className="card-title">
+                    <HelpOutlineIcon className="card-icon" />
+                    Report Types & Instructions
+                  </Typography>
+                </Box>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Box className="instruction-section">
+                      <Typography variant="h6" className="instruction-title">
+                        Report Types
+                      </Typography>
+                      <Box className="instruction-list">
+                        <Box className="instruction-item">
+                          <Chip label="Daily" size="small" color="primary" />
+                          <Typography variant="body2">
+                            Current day attendance with present/absent counts and percentages
+                          </Typography>
+                        </Box>
+                        <Box className="instruction-item">
+                          <Chip label="Weekly" size="small" color="secondary" />
+                          <Typography variant="body2">
+                            7-day overview showing attendance trends and patterns
+                          </Typography>
+                        </Box>
+                        <Box className="instruction-item">
+                          <Chip label="Monthly" size="small" color="info" />
+                          <Typography variant="body2">
+                            Comprehensive view of attendance patterns over the past month
+                          </Typography>
+                        </Box>
+                       
+                      </Box>
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <Box className="instruction-section">
+                      <Typography variant="h6" className="instruction-title">
+                        Export Formats
+                      </Typography>
+                      <Box className="instruction-list">
+                        <Box className="instruction-item">
+                          <Chip icon={<PictureAsPdfIcon />} label="PDF" size="small" color="error" />
+                          <Typography variant="body2">
+                            Perfect for printing, sharing, and official documentation
+                          </Typography>
+                        </Box>
+                        <Box className="instruction-item">
+                          <Chip icon={<TableChartIcon />} label="Excel" size="small" color="success" />
+                          <Typography variant="body2">
+                            Ideal for data analysis, filtering, and further processing
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Container>
     </div>
   );
 };
