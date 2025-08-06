@@ -13,7 +13,7 @@ A modern, full-stack attendance management system built with React and Node.js. 
 ## Tech Stack
 
 - **Frontend**: React 18, Material-UI, Recharts for data visualization
-- **Backend**: Node.js, Express.js, MongoDB with Mongoose
+- **Backend**: Node.js, Express.js, MongoDB with Compass
 - **Authentication**: JWT tokens with bcrypt for password hashing
 - **File Export**: PDF and Excel report generation
 

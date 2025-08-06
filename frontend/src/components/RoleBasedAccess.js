@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 
 // Component that only renders its children if the user has the required role
-export const RoleRequired = ({ roles, children, redirectTo = '/unauthorized' }) => {
+export const RoleRequired = ({ roles, children, redirectTo = '/login' }) => {
   const { user } = useAuth();
   
   if (!user) {
