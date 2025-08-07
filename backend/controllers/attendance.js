@@ -1,4 +1,5 @@
-const fs = require('fs');
+const fs = require('fs-extra');
+const fsSync = require('fs');
 const mongoose = require('mongoose');
 
 const Attendance = require('../models/Attendance');
@@ -268,15 +269,20 @@ exports.getStudentAttendanceDashboard = async (req, res) => {
 exports.getCourseAttendanceDashboard = async (req, res) => {
   try {
     const { courseId } = req.params;
+    const { filter } = req.query;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const userName = req.user.name;
     
-    const attendance = await Attendance.find({ course: courseId })
-      .populate('course', 'courseName courseCode')
-      .populate('faculty', 'name')
-      .populate('students.student', 'name rollNumber')
-      .sort({ date: -1 });
+    // Use the dashboard hooks to get properly formatted data
+    const dashboardData = await dashboardHooks.getCourseDashboardData(courseId, userId, userRole, userName);
     
-    res.json({ success: true, count: attendance.length, data: attendance });
+    res.json({ 
+      success: true, 
+      ...dashboardData 
+    });
   } catch (error) {
+    console.error('Error in getCourseAttendanceDashboard:', error);
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
 };
@@ -458,7 +464,7 @@ exports.exportAttendanceReport = async (req, res) => {
     // Send the file
     try {
       console.log('Creating read stream for file:', filePath);
-      const fileStream = fs.createReadStream(filePath);
+      const fileStream = fsSync.createReadStream(filePath);
       
       // Handle errors on the stream
       fileStream.on('error', (streamError) => {

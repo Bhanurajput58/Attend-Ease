@@ -1,0 +1,733 @@
+
+.attendance-list-page-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.attendance-list-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 15px;
+  flex-shrink: 0;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  margin: 0 1rem 1.5rem 1rem;
+}
+
+.attendance-list-page-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.75rem;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.attendance-list-page-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-right: 20px;
+}
+
+.attendance-list-back-button {
+  padding: 8px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 0.9rem;
+}
+
+.attendance-list-take-attendance-btn {
+  padding: 8px 16px;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
+}
+
+.attendance-list-take-attendance-btn:hover {
+  background: linear-gradient(45deg, #5a6fd8, #6a4190);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Faculty/Admin View */
+.attendance-list-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0 1rem;
+  transition: all 0.3s ease;
+}
+
+.attendance-list-filters-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #f0f0f0;
+  flex-wrap: wrap;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.attendance-list-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 20px;
+}
+
+.attendance-list-filter-group label {
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+}
+
+.attendance-list-filter-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 0.9rem;
+  min-width: 150px;
+}
+
+.attendance-list-search-group {
+  display: flex;
+  align-items: center;
+  padding-right: 20px;
+}
+
+.attendance-list-search-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  min-width: 250px;
+}
+
+.attendance-list-search-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.attendance-list-table-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.attendance-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.attendance-list-table thead {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.attendance-list-table th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+}
+
+.attendance-list-table tbody tr {
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.attendance-list-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.attendance-list-table td {
+  padding: 12px 8px;
+  vertical-align: middle;
+}
+
+.attendance-list-date-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 15px;
+}
+
+.attendance-list-date {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.attendance-list-time {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.attendance-list-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 80px;
+}
+
+.attendance-list-bar {
+  height: 6px;
+  border-radius: 3px;
+  flex: 1;
+  min-width: 40px;
+}
+
+.attendance-list-bar.status-excellent {
+  background-color: #2ecc71;
+}
+
+.attendance-list-bar.status-good {
+  background-color: #3498db;
+}
+
+.attendance-list-bar.status-average {
+  background-color: #f39c12;
+}
+
+.attendance-list-bar.status-poor {
+  background-color: #e74c3c;
+}
+
+.attendance-list-value {
+  font-weight: 600;
+  font-size: 0.8rem;
+  min-width: 35px;
+}
+
+.attendance-list-count-cell {
+  text-align: center;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  min-width: 40px;
+}
+
+.attendance-list-count-cell.present-count {
+  background-color: #e3f7e8;
+  color: #2e8540;
+}
+
+.attendance-list-count-cell.absent-count {
+  background-color: #ffe0e0;
+  color: #d73a49;
+}
+
+.attendance-list-count-cell.late-count {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.attendance-list-action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.attendance-list-view-button {
+  padding: 6px 12px;
+  background-color: #2196F3;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+  text-align: center;
+  min-width: 80px;
+  transition: background-color 0.3s;
+}
+
+.attendance-list-view-button:hover {
+  background-color: #1976D2;
+}
+
+.attendance-list-attendance-button {
+  padding: 6px 12px;
+  background-color: #4CAF50;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+  text-align: center;
+  min-width: 80px;
+  transition: background-color 0.3s;
+}
+
+.attendance-list-attendance-button:hover {
+  background-color: #388E3C;
+}
+
+.attendance-list-edit-button {
+  padding: 6px 12px;
+  background-color: #FF9800;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+  text-align: center;
+  min-width: 80px;
+  transition: background-color 0.3s;
+}
+
+.attendance-list-edit-button:hover {
+  background-color: #F57C00;
+}
+
+/* Student View */
+.attendance-list-student-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  flex: 1;
+  overflow: hidden;
+  padding: 0 1rem;
+}
+
+.attendance-list-overall-stats-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 25px;
+  flex-shrink: 0;
+}
+
+.attendance-list-student-stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.attendance-list-student-stats-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+.attendance-list-overall-attendance {
+  text-align: center;
+  min-width: 120px;
+}
+
+.attendance-list-attendance-percentage {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #3498db;
+  display: block;
+}
+
+.attendance-list-attendance-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 5px;
+}
+
+.attendance-list-course-attendance-summary h3 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.attendance-list-course-chart {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attendance-list-course-attendance-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.attendance-list-course-attendance-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.attendance-list-course-attendance-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.attendance-list-course-header {
+  margin-bottom: 20px;
+}
+
+.attendance-list-course-header h3 {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.attendance-list-course-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.attendance-list-faculty {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.attendance-list-attendance-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+}
+
+.attendance-list-attendance-counts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.attendance-list-count-item {
+  text-align: center;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.attendance-list-count {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.attendance-list-label {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.attendance-list-session-list h4 {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.attendance-list-session-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attendance-list-session-item {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 10px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.attendance-list-session-date {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.attendance-list-session-topic {
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attendance-list-session-status {
+  text-align: center;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-weight: 500;
+  text-transform: capitalize;
+  font-size: 0.75rem;
+}
+
+.attendance-list-session-status.present {
+  background-color: #e3f7e8;
+  color: #2e8540;
+}
+
+.attendance-list-session-status.absent {
+  background-color: #ffe0e0;
+  color: #d73a49;
+}
+
+.attendance-list-session-status.late {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Loading State */
+.attendance-list-loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+}
+
+.attendance-list-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: attendance-list-spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes attendance-list-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .attendance-list-page-container {
+    padding: 0.5rem 0;
+    min-height: 100vh;
+  }
+  
+  .attendance-list-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+    padding: 0.75rem;
+    margin: 0 0.5rem 1.25rem 0.5rem;
+  }
+  
+  .attendance-list-page-title {
+    font-size: 1.5rem;
+  }
+  
+  .attendance-list-page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .attendance-list-filters-section {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem;
+  }
+  
+  .attendance-list-filter-group {
+    justify-content: space-between;
+  }
+  
+  .attendance-list-search-input {
+    min-width: 100%;
+  }
+  
+  .attendance-list-table {
+    font-size: 0.8rem;
+  }
+  
+  .attendance-list-table th,
+  .attendance-list-table td {
+    padding: 8px 4px;
+  }
+  
+  .attendance-list-action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .attendance-list-view-button,
+  .attendance-list-attendance-button,
+  .attendance-list-edit-button {
+    min-width: 60px;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+  
+  .attendance-list-course-attendance-cards {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .attendance-list-session-item {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  
+  .attendance-list-attendance-counts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .attendance-list-content {
+    margin: 0 0.5rem;
+  }
+  
+  .attendance-list-student-content {
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .attendance-list-page-container {
+    padding: 0.25rem 0;
+    min-height: 100vh;
+  }
+  
+  .attendance-list-page-title {
+    font-size: 1.25rem;
+  }
+  
+  .attendance-list-table {
+    font-size: 0.75rem;
+  }
+  
+  .attendance-list-table th,
+  .attendance-list-table td {
+    padding: 6px 2px;
+  }
+  
+  .attendance-list-page-header {
+    padding: 0.625rem;
+    margin: 0 0.25rem 1rem 0.25rem;
+  }
+  
+  .attendance-list-page-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+  
+  .attendance-list-content {
+    margin: 0 0.25rem;
+  }
+  
+  .attendance-list-student-content {
+    padding: 0 0.25rem;
+  }
+}
+
+/* Pending Approval Message Styling */
+.pending-approval-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 60vh;
+  padding: 2rem;
+  margin: 2rem auto;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pending-approval-message h2 {
+  color: #4a90e2;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.pending-approval-message p {
+  color: #555;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  max-width: 500px;
+}
+
+.pending-approval-message p:last-child {
+  margin-bottom: 0;
+  font-weight: 500;
+  color: #4a90e2;
+}
+
+@media (max-width: 768px) {
+  .pending-approval-message {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  .pending-approval-message h2 {
+    font-size: 1.5rem;
+  }
+
+  .pending-approval-message p {
+    font-size: 0.9rem;
+  }
+} 

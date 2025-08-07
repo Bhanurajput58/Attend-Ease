@@ -1,174 +1,226 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Typography,
-  Paper,
-  Grid,
-  IconButton,
-  Button,
-  CircularProgress,
-  Alert,
-  LinearProgress
+import {
+  Box, Typography, Paper, Grid, IconButton, Button, CircularProgress,
+  Alert, LinearProgress, Select, MenuItem, FormControl
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CheckIcon from '@mui/icons-material/Check';
-import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import InfoIcon from '@mui/icons-material/Info';
+import {
+  KeyboardBackspace as KeyboardBackspaceIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Info as InfoIcon,
+  ExpandMore as ExpandMoreIcon
+} from '@mui/icons-material';
 import { API_ENDPOINTS, api } from '../../config/api';
+import useAuth from '../../hooks/useAuth';
+import './CourseAttendanceDetail.css';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = [
-  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
-  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
-];
-
-// Mock course data for testing
-const COURSES_DATA = {
-  '0': { name: 'Operating System', code: 'CS2006' },
-  '1': { name: 'Design & Analysis of Algorithm', code: 'CS2007' },
-  '2': { name: 'Computer Network', code: 'CS2008' },
-  '3': { name: 'IoT and Embedded Systems', code: 'CS2009' }
-};
 
 const CourseAttendanceDetail = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const today = new Date();
   
-  // Get course data from our mock data
-  const [courseData, setCourseData] = useState(COURSES_DATA[courseId] || { name: 'Unknown Course', code: 'N/A' });
-  
+  const [courseData, setCourseData] = useState({ name: 'Loading...', code: 'N/A' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [calendar, setCalendar] = useState([]);
-  const [summary, setSummary] = useState({
-    present: 0,
-    absent: 0,
-    percentage: 0
+  const [attendanceData, setAttendanceData] = useState({
+    sessions: [],
+    summary: {
+      present: 0,
+      absent: 0,
+      total: 0,
+      percentage: 0
+    }
   });
-  const [usingMockData, setUsingMockData] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState('all');
+
+  const filterOptions = [
+    { value: 'this', label: 'This month' },
+    { value: 'all', label: 'All months' }
+  ];
 
   useEffect(() => {
-    console.log(`CourseAttendanceDetail mounted for course: ${courseId}`);
-    
     const fetchCourseData = async () => {
-      // If courseId is a MongoDB ObjectId (24 hex chars) try to fetch real data
-      if (courseId && courseId.match(/^[0-9a-fA-F]{24}$/)) {
-        try {
-          setLoading(true);
-          // Use consistent API_ENDPOINTS
-          const response = await api.get(API_ENDPOINTS.GET_COURSE_BY_ID(courseId));
-          if (response.data && response.data.success) {
-            const course = response.data.data;
-            setCourseData({
-              name: course.courseName || 'Unknown Course',
-              code: course.courseCode || 'N/A'
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching course data:', error);
-          
-          // Try alternative endpoint format if first one fails
-          try {
-            // Already using API_ENDPOINTS, so this is a redundant check, but keeping it for robustness
-            console.log('Trying to fetch course data again...');
-            setUsingMockData(true);
-          } catch (altError) {
-            console.error('Alternative endpoint also failed:', altError);
-            // Keep using mock data if both API calls fail
-          }
-        } finally {
-          setLoading(false);
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Use student-specific endpoint for course info
+        const courseResponse = await api.get(API_ENDPOINTS.GET_COURSE_STUDENT_INFO(courseId));
+        if (courseResponse.data && courseResponse.data.success) {
+          const course = courseResponse.data.data;
+          setCourseData({
+            name: course.courseName || 'Unknown Course',
+            code: course.courseCode || 'N/A'
+          });
         }
-      } else {
-        // Using mock data for non-MongoDB ObjectId courseIds
-        console.log('Using mock course data for id:', courseId);
+        
+        await fetchAttendanceData();
+        
+      } catch (error) {
+        console.error('Error fetching course data:', error);
+        setError('Failed to load course data. Please try again.');
+      } finally {
         setLoading(false);
-        setUsingMockData(true);
       }
     };
     
     fetchCourseData();
-    
-    // Generate attendance data for the selected month
-    generateCalendarData(calendarDate);
-  }, [courseId, calendarDate]);
+  }, [courseId]);
 
-  const generateCalendarData = (date) => {
-    // First day of the month
-    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-    // Last day of the month
-    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  useEffect(() => {
+    if (courseId) {
+      fetchAttendanceData();
+    }
+  }, [selectedFilter, courseId]);
+
+  const fetchAttendanceData = async () => {
+    try {
+      const endpoint = selectedFilter === 'this' 
+        ? `${API_ENDPOINTS.GET_COURSE_ATTENDANCE_DASHBOARD(courseId)}?filter=this_month`
+        : `${API_ENDPOINTS.GET_COURSE_ATTENDANCE_DASHBOARD(courseId)}?filter=all_months`;
+      
+      const response = await api.get(endpoint);
+      
+      if (response.data && response.data.success) {
+        const data = response.data;
+        
+        let sessions = [];
+        let presentCount = 0;
+        let absentCount = 0;
+        let totalSessions = 0;
+        
+        if (data.studentAttendance && data.studentAttendance.courses && data.studentAttendance.courses.length > 0) {
+          const courseAttendance = data.studentAttendance.courses[0];
+          
+          sessions = courseAttendance.sessions || [];
+          presentCount = courseAttendance.present || 0;
+          absentCount = courseAttendance.absent || 0;
+          totalSessions = courseAttendance.total || sessions.length;
+        } else if (data.courseAttendance && data.courseAttendance.sessions) {
+          sessions = data.courseAttendance.sessions || [];
+          presentCount = data.courseAttendance.present || 0;
+          absentCount = data.courseAttendance.absent || 0;
+          totalSessions = data.courseAttendance.total || sessions.length;
+        }
+        
+        const filteredSessions = filterSessionsByMonth(sessions, selectedFilter);
+        const filteredStats = calculateFilteredStats(filteredSessions);
+        
+        setAttendanceData({
+          sessions: filteredSessions,
+          summary: filteredStats
+        });
+        
+        generateCalendarData(calendarDate, filteredSessions);
+        
+      } else {
+        throw new Error('Failed to fetch attendance data');
+      }
+    } catch (error) {
+      setError('Failed to load attendance data. Please try again.');
+    }
+  };
+
+  const filterSessionsByMonth = (sessions, filter) => {
+    if (filter === 'all') {
+      return sessions;
+    }
     
-    // Class days: Monday (1), Wednesday (3), Friday (5)
-    const classDays = [1, 3, 5];
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
     
-    let calendarDays = [];
+    return sessions.filter(session => {
+      let sessionDate;
+      if (typeof session.date === 'string') {
+        sessionDate = new Date(session.date);
+      } else {
+        sessionDate = new Date(session.date);
+      }
+      
+      return sessionDate.getMonth() === currentMonth && 
+             sessionDate.getFullYear() === currentYear;
+    });
+  };
+
+  const calculateFilteredStats = (sessions) => {
     let presentCount = 0;
     let absentCount = 0;
     
-    // Add empty slots for days before the first day of the month
+    sessions.forEach(session => {
+      if (session.status === 'present') {
+        presentCount++;
+      } else if (session.status === 'absent') {
+        absentCount++;
+      }
+    });
+    
+    const totalSessions = sessions.length;
+    const percentage = totalSessions > 0 ? Math.round(((presentCount / totalSessions) * 100)) : 0;
+    
+    return {
+      present: presentCount,
+      absent: absentCount,
+      total: totalSessions,
+      percentage: percentage
+    };
+  };
+
+  const generateCalendarData = (date, sessions = []) => {
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    
+    let calendarDays = [];
+    
     for (let i = 0; i < firstDay.getDay(); i++) {
       calendarDays.push({ date: null });
     }
     
-    // Add days of the month
     for (let i = 1; i <= lastDay.getDate(); i++) {
       const currentDate = new Date(date.getFullYear(), date.getMonth(), i);
-      const dayOfWeek = currentDate.getDay();
       
-      // Don't show attendance for future dates
-      const isFutureDate = currentDate > today;
+      const attendanceForDate = sessions.find(session => {
+        let sessionDate;
+        if (typeof session.date === 'string') {
+          sessionDate = new Date(session.date);
+        } else {
+          sessionDate = new Date(session.date);
+        }
+        
+        const currentDateStr = currentDate.toISOString().split('T')[0];
+        const sessionDateStr = sessionDate.toISOString().split('T')[0];
+        
+        return currentDateStr === sessionDateStr;
+      });
       
-      // Check if it's a class day
-      if (classDays.includes(dayOfWeek) && !isFutureDate) {
-        // Random attendance status for past and present dates
-        // In a real app, this would come from an API
-        const status = Math.random() > 0.3 ? 'present' : 'absent';
-        
-        if (status === 'present') presentCount++;
-        else absentCount++;
-        
-        calendarDays.push({
-          date: currentDate,
-          status: status
-        });
-      } else {
-        calendarDays.push({
-          date: currentDate,
-          status: null
-        });
-      }
+      calendarDays.push({
+        date: currentDate,
+        status: attendanceForDate ? attendanceForDate.status : null,
+        topic: attendanceForDate ? attendanceForDate.topic : null
+      });
     }
     
-    // Calculate percentage
-    const totalDays = presentCount + absentCount;
-    const percentage = totalDays > 0 ? Math.round((presentCount / totalDays) * 100) : 0;
-    
     setCalendar(calendarDays);
-    setSummary({
-      present: presentCount,
-      absent: absentCount,
-      percentage: percentage
-    });
   };
 
   const handlePrevMonth = () => {
     const prevMonth = new Date(calendarDate);
     prevMonth.setMonth(prevMonth.getMonth() - 1);
     setCalendarDate(prevMonth);
+    generateCalendarData(prevMonth, attendanceData.sessions);
   };
 
   const handleNextMonth = () => {
     const nextMonth = new Date(calendarDate);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     setCalendarDate(nextMonth);
+    generateCalendarData(nextMonth, attendanceData.sessions);
   };
 
   const isCurrentMonth = (date) => {
@@ -183,105 +235,65 @@ const CourseAttendanceDetail = () => {
     navigate(-1);
   };
 
-  // Show loading state
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box className="loading-container">
         <CircularProgress />
-        <Typography variant="h6" sx={{ ml: 2 }}>Loading attendance data...</Typography>
+        <Typography variant="h6" className="loading-text">Loading attendance data...</Typography>
       </Box>
     );
   }
 
-  // Show error state
   if (error) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box className="error-container">
         <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ 
-      p: { xs: 1, md: 2 }, 
-      pt: { xs: 3, md: 4 },
-      maxWidth: 900, 
-      mx: 'auto', 
-      display: 'flex',
-      flexDirection: 'column',
-      height: '90vh',
-      overflow: 'hidden'
-    }}>
-      {/* Course Title Banner with Back Button */}
-      <Paper 
-        elevation={2} 
-        sx={{ 
-          p: 1, 
-          mb: 1, 
-          mt: 1,
-          textAlign: 'center',
-          background: 'linear-gradient(to right, #f5f5f5, #e8f5e9, #f5f5f5)',
-          borderRadius: 2,
-          position: 'relative'
-        }}
-      >
-        {/* Back button */}
-        <Box sx={{ position: 'absolute', top: 8, left: 8 }}>
+    <Box className="course-attendance-container">
+      <Paper className="course-title-banner">
+        <Box className="course-back-button">
           <IconButton 
             onClick={handleBack} 
             size="small"
-            sx={{ 
-              color: 'primary.main',
-              bgcolor: 'rgba(25, 118, 210, 0.08)',
-              '&:hover': {
-                bgcolor: 'rgba(25, 118, 210, 0.12)'
-              }
-            }}
           >
             <KeyboardBackspaceIcon fontSize="small" />
           </IconButton>
         </Box>
         
-        
-        
         <Typography 
           variant="h5" 
           component="h1" 
-          sx={{ 
-            fontWeight: 'bold',
-            color: '#2e7d32',
-            mb: 0.5,
-            mt: 0.75
-          }}
+          className="course-title"
         >
           {courseData.name}
         </Typography>
         <Typography 
           variant="subtitle1" 
-          color="text.secondary"
-          sx={{ fontWeight: 'medium' }}
+          className="course-code"
         >
           Course Code: {courseData.code}
         </Typography>
       </Paper>
       
-      {/* Calendar and Summary Section */}
-      <Grid container spacing={1.5} sx={{ flexGrow: 1, mb: 0 }}>
-        {/* Calendar */}
-        <Grid item xs={12} md={7}>
-          <Paper elevation={2} sx={{ p: 1.5, pb: 1, borderRadius: 2, height: '90%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.75 }}>
+      <Grid container spacing={1.5} className="calendar-summary-grid">
+        <Grid item xs={12} md={6}>
+          <Paper className="calendar-paper">
+            <Box className="calendar-header">
               <Button 
                 startIcon={<ChevronLeftIcon />} 
                 onClick={handlePrevMonth}
                 variant="outlined"
                 size="small"
                 color="primary"
+                className="calendar-nav-button"
               >
                 Prev
               </Button>
-              <Typography variant="subtitle1" fontWeight="medium">
+              <Typography variant="subtitle1" className="calendar-month-title">
                 {calendarDate.toLocaleString('default', { month: 'long' })} {calendarDate.getFullYear()}
               </Typography>
               <Button 
@@ -291,17 +303,16 @@ const CourseAttendanceDetail = () => {
                 size="small"
                 color="primary"
                 disabled={isCurrentMonth(calendarDate) && isCurrentYear(calendarDate)}
+                className="calendar-nav-button"
               >
                 Next
               </Button>
             </Box>
-            <Grid container spacing={0} sx={{ textAlign: 'center', flexGrow: 1 }}>
+            <div className="calendar-grid">
               {DAYS_OF_WEEK.map((day) => (
-                <Grid item xs={12/7} key={day}>
-                  <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
-                    {day}
-                  </Typography>
-                </Grid>
+                <div key={day} className="calendar-day-header">
+                  {day}
+                </div>
               ))}
               {calendar.map((day, index) => {
                 const isToday = day.date && 
@@ -310,156 +321,110 @@ const CourseAttendanceDetail = () => {
                                 day.date.getFullYear() === today.getFullYear();
                 
                 return (
-                  <Grid item xs={12/7} key={index}>
+                  <div key={index}>
                     {day.date ? (
                       <Paper 
                         elevation={0} 
-                        sx={{ 
-                          p: 0, 
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          border: isToday ? '1px solid #2196f3' : '0.5px solid #e0e0e0',
-                          borderRadius: 0.5,
-                          background: day.status === 'present' 
-                            ? 'rgba(76, 175, 80, 0.1)' 
-                            : day.status === 'absent' 
-                              ? 'rgba(244, 67, 54, 0.1)' 
-                              : 'inherit',
-                          position: 'relative',
-                          minHeight: '32px'
-                        }}
+                        className={`calendar-day-cell ${isToday ? 'today' : ''} ${day.status ? day.status : ''}`}
                       >
-                        <Typography variant="caption" fontWeight={isToday ? 'bold' : 'normal'}>
+                        <Typography variant="caption" className={`calendar-day-number ${isToday ? 'today' : ''}`}>
                           {day.date.getDate()}
                         </Typography>
-                        {day.status && (
-                          <Box 
-                            sx={{ 
-                              mt: 0.1, 
-                              width: 5, 
-                              height: 5, 
-                              borderRadius: '50%',
-                              bgcolor: day.status === 'present' ? 'success.main' : 'error.main' 
-                            }} 
-                          />
-                        )}
-                        {isToday && (
-                          <Typography 
-                            variant="caption" 
-                            sx={{ 
-                              position: 'absolute',
-                              bottom: 0,
-                              fontSize: '0.45rem',
-                              color: 'primary.main',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            TODAY
-                          </Typography>
+                        {isToday && day.status && (
+                          <div 
+                            className={`calendar-attendance-indicator today-indicator ${day.status}`}
+                          /> 
                         )}
                       </Paper>
                     ) : (
-                      <Box sx={{ p: 0, height: '100%', minHeight: '32px' }} />
+                      <div className="calendar-empty-cell" />
                     )}
-                  </Grid>
+                  </div>
                 );
               })}
-            </Grid>
+            </div>
           </Paper>
         </Grid>
         
-        {/* Attendance Summary */}
-        <Grid item xs={12} md={5}>
-          <Paper elevation={2} sx={{ 
-            p: 1.5, 
-            borderRadius: 2, 
-            height: '90%',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold', color: 'primary.main', textAlign: 'center' }}>
-              Attendance Summary
-            </Typography>
+        <Grid item xs={12} md={6}>
+          <Paper className="attendance-summary-paper">
+            <Box className="attendance-summary-header">
+              <Box className="attendance-title-section">
+                <Typography variant="subtitle1" className="attendance-summary-title">
+                  {selectedFilter === 'this' ? 'Attendance for this month' : 'Attendance for all months'}
+                </Typography>
+              </Box>
+              <FormControl size="small" className="month-filter-control">
+                <Select
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                  displayEmpty
+                  IconComponent={ExpandMoreIcon}
+                  className="month-filter-select"
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 200
+                      }
+                    }
+                  }}
+                  renderValue={() => ''}
+                >
+                  {filterOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
             
-            <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+            <Grid container spacing={1.5} className="attendance-stats-grid">
               <Grid item xs={6}>
-                <Paper elevation={1} sx={{ 
-                  p: 1, 
-                  bgcolor: 'success.light', 
-                  color: 'success.contrastText',
-                  borderRadius: 2,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center'
-                }}>
-                  <Typography variant="caption" gutterBottom>Present</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold', lineHeight: 1.1 }}>{summary.present}</Typography>
-                  <Typography variant="caption">days</Typography>
+                <Paper elevation={1} className="attendance-stat-card present">
+                  <Typography variant="caption" className="attendance-stat-label">Present</Typography>
+                  <Typography variant="h5" className="attendance-stat-value">{attendanceData.summary.present}</Typography>
+                  <Typography variant="caption" className="attendance-stat-unit">days</Typography>
                 </Paper>
               </Grid>
               <Grid item xs={6}>
-                <Paper elevation={1} sx={{ 
-                  p: 1, 
-                  bgcolor: 'error.light', 
-                  color: 'error.contrastText',
-                  borderRadius: 2,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center'
-                }}>
-                  <Typography variant="caption" gutterBottom>Absent</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold', lineHeight: 1.1 }}>{summary.absent}</Typography>
-                  <Typography variant="caption">days</Typography>
+                <Paper elevation={1} className="attendance-stat-card absent">
+                  <Typography variant="caption" className="attendance-stat-label">Absent</Typography>
+                  <Typography variant="h5" className="attendance-stat-value">{attendanceData.summary.absent}</Typography>
+                  <Typography variant="caption" className="attendance-stat-unit">days</Typography>
                 </Paper>
               </Grid>
             </Grid>
             
-            <Box sx={{ mb: 1.5 }}>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                mb: 0.5
-              }}>
-                <Typography variant="body2">Attendance Rate</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                  {summary.percentage}%
+            <Box className="attendance-details">
+              <Box className="attendance-detail-row">
+                <Typography variant="body2" className="attendance-detail-label">Total Classes</Typography>
+                <Typography variant="body2" className="attendance-detail-value">
+                  {attendanceData.summary.total}
+                </Typography>
+              </Box>
+              <Box className="attendance-detail-row">
+                <Typography variant="body2" className="attendance-detail-label">Attendance Rate</Typography>
+                <Typography variant="body2" className="attendance-detail-value">
+                  {attendanceData.summary.percentage}%
                 </Typography>
               </Box>
               <LinearProgress 
                 variant="determinate" 
-                value={summary.percentage} 
-                sx={{ 
-                  height: 6, 
-                  borderRadius: 3,
-                  bgcolor: 'grey.200',
-                  '& .MuiLinearProgress-bar': {
-                    bgcolor: summary.percentage >= 75 ? 'success.main' : summary.percentage >= 60 ? 'warning.main' : 'error.main'
-                  }
-                }}
+                value={attendanceData.summary.percentage} 
+                className={`attendance-progress-bar ${
+                  attendanceData.summary.percentage >= 75 ? 'excellent' : 
+                  attendanceData.summary.percentage >= 60 ? 'satisfactory' : 'warning'
+                }`}
               />
             </Box>
             
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'flex-start', 
-              mt: 'auto', 
-              mb: 0,
-              bgcolor: 'info.lighter',
-              p: 0.75,
-              borderRadius: 1
-            }}>
-              <InfoIcon sx={{ color: 'info.main', mr: 0.75, fontSize: '0.8rem', mt: 0.15 }} />
-              <Typography variant="caption" color="text.secondary">
-                {summary.percentage >= 75 
+            <Box className="attendance-info-box">
+              <InfoIcon className="attendance-info-icon" />
+              <Typography variant="caption" className="attendance-info-text">
+                {attendanceData.summary.percentage >= 75 
                   ? 'Excellent attendance! Keep it up.' 
-                  : summary.percentage >= 60 
+                  : attendanceData.summary.percentage >= 60 
                     ? 'Your attendance is satisfactory but could be improved.' 
                     : 'Warning: Your attendance is below minimum requirements.'}
               </Typography>

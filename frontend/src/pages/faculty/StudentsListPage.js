@@ -14,7 +14,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination
+  TablePagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Avatar,
+  Chip,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
@@ -23,6 +33,10 @@ import { API_ENDPOINTS } from '../../config/api';
 import API_BASE_URL from '../../config/api';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
+import EmailIcon from '@mui/icons-material/Email';
+import BadgeIcon from '@mui/icons-material/Badge';
+import SchoolIcon from '@mui/icons-material/School';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 /**
  * Students List Page Component
@@ -38,6 +52,12 @@ const StudentsListPage = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Dialog states
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [studentDetails, setStudentDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Fetch students data
   useEffect(() => {
@@ -136,7 +156,8 @@ const StudentsListPage = () => {
         department: student.program || student.department || 'B.tech',
         semester: student.semester || 4,
         discipline: student.discipline || 'N/A',
-        courses: student.courses || []
+        courses: student.courses || [],
+        email: student.email || 'N/A'
       }));
       
       console.log('Formatted students:', formattedStudents);
@@ -180,11 +201,32 @@ const StudentsListPage = () => {
     setPage(0);
   };
 
-  // View student profile (includes all details)
-  const handleViewProfile = (studentId) => {
-    // Navigate to the student profile page
-    console.log(`Navigating to student profile page for ID: ${studentId}`);
-    navigate(`/student/profile/${studentId}`);
+  // View student details in popup
+  const handleViewProfile = async (student) => {
+    setSelectedStudent(student);
+    setDialogOpen(true);
+    setDetailsLoading(true);
+    
+    try {
+      // Fetch additional student details if needed
+      const response = await api.get(`/api/students/${student.id}`);
+      if (response.data && response.data.success) {
+        setStudentDetails(response.data.data);
+      } else {
+        setStudentDetails(student);
+      }
+    } catch (error) {
+      console.error('Error fetching student details:', error);
+      setStudentDetails(student);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedStudent(null);
+    setStudentDetails(null);
   };
 
   return (
@@ -269,9 +311,9 @@ const StudentsListPage = () => {
                               variant="contained"
                               size="small"
                               color="primary"
-                              onClick={() => handleViewProfile(student.id)}
+                              onClick={() => handleViewProfile(student)}
                             >
-                              View Profile
+                              View Details
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -301,6 +343,95 @@ const StudentsListPage = () => {
           )}
         </Container>
       </div>
+
+      {/* Student Details Dialog */}
+      <Dialog 
+        open={dialogOpen} 
+        onClose={handleCloseDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar
+              src={selectedStudent?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedStudent?.name || '')}`}
+              alt={selectedStudent?.name}
+              sx={{ width: 50, height: 50, mr: 2 }}
+            />
+            <Box>
+              <Typography variant="h6">{selectedStudent?.name}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Roll No: {selectedStudent?.enrollmentNumber}
+              </Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {detailsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardHeader title="Personal Information" />
+                  <CardContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <EmailIcon sx={{ mr: 2, color: 'primary.main' }} />
+                        <Typography>
+                          <strong>Email:</strong> {studentDetails?.email || selectedStudent?.email || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <BadgeIcon sx={{ mr: 2, color: 'primary.main' }} />
+                        <Typography>
+                          <strong>Roll Number:</strong> {selectedStudent?.enrollmentNumber || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardHeader title="Academic Information" />
+                  <CardContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <SchoolIcon sx={{ mr: 2, color: 'primary.main' }} />
+                        <Typography>
+                          <strong>Department:</strong> {selectedStudent?.department || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <SchoolIcon sx={{ mr: 2, color: 'primary.main' }} />
+                        <Typography>
+                          <strong>Discipline:</strong> {selectedStudent?.discipline || 'N/A'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <CalendarTodayIcon sx={{ mr: 2, color: 'primary.main' }} />
+                        <Typography>
+                          <strong>Semester:</strong> {typeof selectedStudent?.semester === 'number' ? `${selectedStudent.semester}th` : selectedStudent?.semester || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+
+
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
