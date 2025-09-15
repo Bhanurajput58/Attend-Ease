@@ -12,13 +12,21 @@ router.post('/apply', protect, authorize('faculty'), async (req, res) => {
     const courseId = req.params.id;
     const facultyId = req.user.id;
     
+    // Check if faculty is approved
+    const facultyDoc = await Faculty.findOne({ user: facultyId });
+    if (!facultyDoc || !facultyDoc.approved) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Your faculty account is not yet approved. Please contact the administrator for approval before applying for courses.' 
+      });
+    }
+    
     const existing = await CourseApplication.findOne({ course: courseId, faculty: facultyId });
     if (existing) {
       return res.status(400).json({ success: false, message: 'Already applied for this course.' });
     }
     
     const facultyUser = await require('../models/User').findById(facultyId);
-    const facultyDoc = await Faculty.findOne({ user: facultyId });
     const courseObj = await Course.findById(courseId);
     
     const application = await CourseApplication.create({

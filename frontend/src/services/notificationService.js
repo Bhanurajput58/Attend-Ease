@@ -118,6 +118,16 @@ class NotificationService {
       throw error.response?.data || { success: false, message: 'Failed to get courses' };
     }
   }
+
+  // Get all admins (for faculty notifications)
+  async getAllAdmins() {
+    try {
+      const response = await api.get('/api/notifications/admins');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, message: 'Failed to get admins' };
+    }
+  }
 }
 
 export default new NotificationService(); 

@@ -66,12 +66,13 @@
 
 /* Statistics Grid */
 .student-attendance-stats-grid {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-.student-attendance-stat-card {
-  border-radius: 20px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+/* Filters Section */
+.student-attendance-filters-paper {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
   background: rgba(255, 255, 255, 0.95) !important;
   backdrop-filter: blur(10px) !important;
   transition: all 0.3s ease !important;
@@ -79,9 +80,44 @@
   overflow: hidden;
 }
 
+.student-attendance-filters-paper:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.student-attendance-filters-paper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.student-attendance-filters-title {
+  color: #333 !important;
+  font-weight: 600 !important;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem !important;
+}
+
+.student-attendance-stat-card {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+  padding: 1rem !important;
+  min-height: 100px !important;
+}
+
 .student-attendance-stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
 }
 
 .student-attendance-stat-card::before {
@@ -90,7 +126,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
+  height: 3px;
   background: linear-gradient(45deg, #667eea, #764ba2);
 }
 
@@ -111,22 +147,23 @@
 }
 
 .student-attendance-stat-icon-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.5rem !important;
 }
 
 .student-attendance-stat-label {
-  font-weight: 600 !important;
-  color: #555 !important;
-  margin-bottom: 0.5rem !important;
+  color: #666 !important;
+  font-weight: 500 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem !important;
+  margin-bottom: 0.25rem !important;
 }
 
 .student-attendance-stat-number {
+  font-size: 1.8rem !important;
   font-weight: 700 !important;
-  color: #333 !important;
-  margin-bottom: 0.5rem !important;
-  font-size: 2.5rem !important;
+  margin-bottom: 0.25rem !important;
+  line-height: 1.2 !important;
 }
 
 .student-attendance-progress-container {

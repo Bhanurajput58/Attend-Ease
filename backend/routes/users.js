@@ -25,4 +25,33 @@ router.route('/:id')
   .patch(updateUser)
   .delete(deleteUser);
 
+// Special route for updating user approval status
+router.put('/:id/approval', async (req, res) => {
+  try {
+    const Faculty = require('../models/Faculty');
+    // Find the faculty document by user id
+    const faculty = await Faculty.findOne({ user: req.params.id });
+    if (!faculty) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Faculty profile not found' 
+      });
+    }
+    faculty.approved = req.body.approved;
+    await faculty.save();
+    res.json({ 
+      success: true, 
+      message: `Faculty ${req.body.approved ? 'approved' : 'revoked'} successfully`,
+      data: faculty 
+    });
+  } catch (error) {
+    console.error('Faculty approval error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating faculty approval status',
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router; 

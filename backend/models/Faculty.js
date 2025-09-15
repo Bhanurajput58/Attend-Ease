@@ -7,7 +7,6 @@ const facultySchema = new mongoose.Schema({
   email: { type: String, required: true },
   department: { type: String, required: true },
   designation: { type: String, required: true, enum: ['Assistant Professor', 'Associate Professor', 'Professor', 'HOD'] },
-  employeeId: { type: String, unique: true },
   joinDate: { type: Date, default: Date.now },
   specialization: { type: String },
   qualifications: [String],

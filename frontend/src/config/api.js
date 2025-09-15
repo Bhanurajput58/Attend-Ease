@@ -65,6 +65,7 @@ export const API_ENDPOINTS = {
     GET_COURSES: `${API_BASE_URL}/api/courses`,
     GET_COURSE: `${API_BASE_URL}/api/courses`,
     GET_COURSE_BY_ID: (id) => `${API_BASE_URL}/api/courses/${id}`,
+    GET_COURSE_STUDENT_INFO: (id) => `${API_BASE_URL}/api/courses/${id}/student-info`,
     CREATE_COURSE: `${API_BASE_URL}/api/courses`,
     UPDATE_COURSE: (id) => `${API_BASE_URL}/api/courses/${id}`,
     DELETE_COURSE: (id) => `${API_BASE_URL}/api/courses/${id}`,
@@ -101,6 +102,7 @@ export const API_ENDPOINTS = {
     GET_LOW_ATTENDANCE: (courseId) => `${API_BASE_URL}/api/faculty/low-attendance/${courseId}`,
     SEND_LOW_ATTENDANCE_EMAILS: `${API_BASE_URL}/api/faculty/send-low-attendance-emails`,
     UPDATE_FACULTY: (id) => `${API_BASE_URL}/api/faculties/${id}`,
+    GET_ALL_FACULTIES: `${API_BASE_URL}/api/faculties`,
     
     // Notification endpoints
     SEND_NOTIFICATIONS: `${API_BASE_URL}/api/notifications/send`,
@@ -114,6 +116,7 @@ export const API_ENDPOINTS = {
     // Admin endpoints
     GET_ADMIN_DASHBOARD: `${API_BASE_URL}/api/admin/dashboard`,
     GET_ALL_USERS: `${API_BASE_URL}/api/admin/users`,
+    UPDATE_USER_APPROVAL: (id) => `${API_BASE_URL}/api/users/${id}/approval`,
     
     // Statistics endpoints
     GET_HOMEPAGE_STATS: `${API_BASE_URL}/api/statistics/homepage`,

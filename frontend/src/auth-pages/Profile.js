@@ -144,6 +144,18 @@ const Profile = () => {
     setIsModalOpen(true);
   };
   const handleCloseModal = () => setIsModalOpen(false);
+  
+  const handleModalOverlayClick = (e) => {
+    // Close modal when clicking on the overlay (outside the modal content)
+    if (e.target === e.currentTarget) {
+      setIsModalOpen(false);
+    }
+  };
+  
+  const handleModalContentClick = (e) => {
+    // Prevent the click from bubbling up to the overlay
+    e.stopPropagation();
+  };
   const handleChange = (e) => {
     if (e.target.name === 'qualifications') {
       setFormData({ ...formData, qualifications: e.target.value });
@@ -234,9 +246,8 @@ const Profile = () => {
               <div><strong>Roll Number:</strong> {profile.rollNumber || 'N/A'}</div>
               <div><strong>Name:</strong> {profile.name || 'N/A'}</div>
               <div><strong>Email:</strong> {profile.email || 'N/A'}</div>
-              <div><strong>Department:</strong> {profile.department || 'N/A'}</div>
-              <div><strong>Semester:</strong> {profile.semester || 'N/A'}</div>
-              <div><strong>GPA:</strong> {profile.gpa || 'N/A'}</div>
+              <div><strong>Department:</strong> {profile.department || 'CSE'}</div>
+              <div><strong>Semester:</strong> {profile.semester || '4'}</div>
               {profile.discipline && <div><strong>Discipline:</strong> {profile.discipline}</div>}
               {profile.program && <div><strong>Program:</strong> {profile.program}</div>}
             </>
@@ -253,10 +264,8 @@ const Profile = () => {
               </div>
               <div><strong>Department:</strong> {profile.department || 'N/A'}</div>
               <div><strong>Designation:</strong> {profile.designation || 'N/A'}</div>
-              <div><strong>Employee ID:</strong> {profile.employeeId || 'N/A'}</div>
               <div><strong>Specialization:</strong> {profile.specialization || 'N/A'}</div>
               <div><strong>Qualifications:</strong> {profile.qualifications ? profile.qualifications.join(', ') : 'N/A'}</div>
-              <div><strong>Courses:</strong> {profile.courses ? profile.courses.length : 0}</div>
             </>
           )}
           {authUser.role === 'admin' && !urlStudentId && (
@@ -272,8 +281,8 @@ const Profile = () => {
         </div>
       </div>
       {isModalOpen && !urlStudentId && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={handleModalOverlayClick}>
+          <div className="modal-content" onClick={handleModalContentClick}>
             <h2>Edit Profile</h2>
             <form onSubmit={handleSave} className="edit-profile-form">
               <label>
@@ -293,17 +302,11 @@ const Profile = () => {
                   </label>
                   <label>
                     Department:
-                    <input name="department" value={formData.department || ''} onChange={handleChange} />
+                    <input name="department" value={formData.department || 'CSE'} onChange={handleChange} />
                   </label>
                   <label>
                     Semester:
-                    <input name="semester" value={formData.semester || ''} onChange={handleChange} />
-                  </label>
-                  
-                  
-                  <label>
-                    GPA:
-                    <input name="gpa" value={formData.gpa || ''} onChange={handleChange} />
+                    <input name="semester" value={formData.semester || '4'} onChange={handleChange} />
                   </label>
                 </>
               )}
@@ -316,10 +319,6 @@ const Profile = () => {
                   <label>
                     Designation:
                     <input name="designation" value={formData.designation || ''} onChange={handleChange} />
-                  </label>
-                  <label>
-                    Employee ID:
-                    <input name="employeeId" value={formData.employeeId || ''} onChange={handleChange} />
                   </label>
                   <label>
                     Specialization:

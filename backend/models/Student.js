@@ -23,7 +23,7 @@ const studentSchema = new mongoose.Schema({
   },
   department: {
     type: String,
-    default: 'Not Specified'
+    default: 'CSE'
   },
   semester: {
     type: Number,
@@ -32,10 +32,6 @@ const studentSchema = new mongoose.Schema({
   rollNumber: {
     type: String,
     required: true
-  },
-  gpa: {
-    type: Number,
-    default: 0
   },
   attendance: [
     {
@@ -89,30 +85,6 @@ studentSchema.pre('save', async function(next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     console.log('Password hashed successfully');
-    
-    // Generate a unique roll number before saving
-    if (this.isNew) {
-      const year = new Date().getFullYear().toString().substr(-2);
-      const deptCode = this.department.substring(0, 2).toUpperCase();
-      
-      // Find the highest existing roll number
-      const highestStudent = await this.constructor.findOne(
-        { rollNumber: new RegExp('^' + year + deptCode) }, 
-        {}, 
-        { sort: { rollNumber: -1 } }
-      );
-      
-      let nextNumber = 1;
-      if (highestStudent && highestStudent.rollNumber) {
-        // Extract the numeric part and increment
-        const numericPart = parseInt(highestStudent.rollNumber.substring(4));
-        nextNumber = numericPart + 1;
-      }
-      
-      // Create roll number in format YYDCNNN (YY=year, DC=dept code, NNN=sequential number)
-      this.rollNumber = `${year}${deptCode}${nextNumber.toString().padStart(3, '0')}`;
-    }
-    
     next();
   } catch (error) {
     console.error('Error hashing password:', error);

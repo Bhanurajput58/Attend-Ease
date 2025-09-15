@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Card, CardContent, Grid, Chip, Button, IconButton, TextField, FormControl, InputLabel, Select, MenuItem, Pagination, CircularProgress, Alert, Avatar, Divider, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { Notifications as NotificationsIcon, CheckCircle as CheckCircleIcon, Warning as WarningIcon, Info as InfoIcon, Error as ErrorIcon, PriorityHigh as PriorityHighIcon, DoneAll as DoneAllIcon, Delete as DeleteIcon, FilterList as FilterListIcon, Sort as SortIcon, Refresh as RefreshIcon, Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { Notifications as NotificationsIcon, CheckCircle as CheckCircleIcon, Warning as WarningIcon, Info as InfoIcon, Error as ErrorIcon, PriorityHigh as PriorityHighIcon, Delete as DeleteIcon, FilterList as FilterListIcon, Sort as SortIcon, Refresh as RefreshIcon, Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
 import { useNotifications } from '../../context/NotificationContext';
 import { formatDistanceToNow, format } from 'date-fns';
 import useAuth from '../../hooks/useAuth';
@@ -8,9 +8,9 @@ import './NotificationCenter.css';
 
 const NotificationCenter = () => {
   const { user } = useAuth();
-  const { notifications, loading, error, pagination, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { notifications, loading, error, pagination, fetchNotifications, deleteNotification } = useNotifications();
 
-  const [filters, setFilters] = useState({ type: '', priority: '', category: '', isRead: '', search: '' });
+  const [filters, setFilters] = useState({ type: '', priority: '', category: '', search: '' });
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedNotification, setSelectedNotification] = useState(null);
@@ -38,14 +38,6 @@ const NotificationCenter = () => {
     fetchNotifications({ page, limit: pagination.limit, ...filters, sortBy, sortOrder });
   };
 
-  const handleMarkAsRead = async (notificationId) => {
-    await markAsRead(notificationId);
-  };
-
-  const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
-  };
-
   const handleDeleteClick = (notification) => {
     setNotificationToDelete(notification);
     setDeleteDialogOpen(true);
@@ -64,7 +56,7 @@ const NotificationCenter = () => {
   };
 
   const clearFilters = () => {
-    setFilters({ type: '', priority: '', category: '', isRead: '', search: '' });
+    setFilters({ type: '', priority: '', category: '', search: '' });
   };
 
   const getNotificationIcon = (type) => {
@@ -113,6 +105,30 @@ const NotificationCenter = () => {
     }
   };
 
+  const getRecipientInfo = (notification) => {
+    const { recipients } = notification;
+    if (!recipients) return 'Unknown';
+    
+    switch (recipients.type) {
+      case 'all':
+        return 'All Users';
+      case 'admin':
+        return 'Administrators';
+      case 'students':
+        return 'Students';
+      case 'faculty':
+        return 'Faculty';
+      case 'course':
+        return 'Course Students';
+      case 'individual':
+        return `${recipients.ids?.length || 0} Selected Users`;
+      case 'role':
+        return recipients.roles?.join(', ') || 'Selected Roles';
+      default:
+        return 'Unknown';
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
@@ -138,11 +154,7 @@ const NotificationCenter = () => {
               sx={{ 
                 backgroundColor: 'rgba(255, 255, 255, 0.2)',
                 color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                  border: '1px solid rgba(255, 255, 255, 0.5)'
-                }
+                border: '1px solid rgba(255, 255, 255, 0.3)'
               }}
             >
               Refresh
@@ -153,7 +165,7 @@ const NotificationCenter = () => {
         <Card className="notification-filters-card">
           <CardContent>
             <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={3}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
                   size="small"
@@ -166,7 +178,7 @@ const NotificationCenter = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={3}>
                 <FormControl fullWidth size="small" className="notification-filter-select">
                   <InputLabel>Type</InputLabel>
                   <Select value={filters.type} onChange={(e) => handleFilterChange('type', e.target.value)} label="Type">
@@ -179,7 +191,7 @@ const NotificationCenter = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={3}>
                 <FormControl fullWidth size="small" className="notification-filter-select">
                   <InputLabel>Priority</InputLabel>
                   <Select value={filters.priority} onChange={(e) => handleFilterChange('priority', e.target.value)} label="Priority">
@@ -192,65 +204,15 @@ const NotificationCenter = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} md={2}>
-                <FormControl fullWidth size="small" className="notification-filter-select">
-                  <InputLabel>Status</InputLabel>
-                  <Select value={filters.isRead} onChange={(e) => handleFilterChange('isRead', e.target.value)} label="Status">
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="false">Unread</MenuItem>
-                    <MenuItem value="true">Read</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={3}>
                 <Box className="filter-buttons-container">
                   <Button variant="outlined" startIcon={<ClearIcon />} onClick={clearFilters} className="filter-button clear">
                     Clear
                   </Button>
-                  {unreadCount > 0 && (
-                    <Button variant="contained" startIcon={<DoneAllIcon />} onClick={handleMarkAllAsRead} disabled={loading} className="filter-button mark-all-read">
-                      Mark All Read
-                    </Button>
-                  )}
                 </Box>
               </Grid>
             </Grid>
           </CardContent>
         </Card>
-
-        <Grid container spacing={2} className="notification-stats-grid">
-          <Grid item xs={12} sm={6} md={3}>
-            <Card className="notification-stat-card">
-              <CardContent>
-                <Typography variant="h4" className="notification-stat-number">{notifications.length}</Typography>
-                <Typography variant="body2" className="notification-stat-label">Total Notifications</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card className="notification-stat-card">
-              <CardContent>
-                <Typography variant="h4" className="notification-stat-number" sx={{ color: 'error.main' }}>{unreadCount}</Typography>
-                <Typography variant="body2" className="notification-stat-label">Unread</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card className="notification-stat-card">
-              <CardContent>
-                <Typography variant="h4" className="notification-stat-number" sx={{ color: 'success.main' }}>{notifications.length - unreadCount}</Typography>
-                <Typography variant="body2" className="notification-stat-label">Read</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card className="notification-stat-card">
-              <CardContent>
-                <Typography variant="h4" className="notification-stat-number" sx={{ color: 'warning.main' }}>{notifications.filter(n => n.priority === 'urgent' || n.priority === 'high').length}</Typography>
-                <Typography variant="body2" className="notification-stat-label">High Priority</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
 
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
@@ -304,52 +266,97 @@ const NotificationCenter = () => {
             <Box>
               {notifications.map((notification, index) => (
                 <Card key={notification._id} className={`notification-item-card ${!notification.isRead ? 'unread' : ''}`}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                      <Avatar className="notification-avatar" sx={{ bgcolor: getNotificationColor(notification.type), color: 'white' }}>
+                  <CardContent sx={{ py: 0.5, px: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Avatar className="notification-avatar" sx={{ 
+                        bgcolor: getNotificationColor(notification.type), 
+                        color: 'white',
+                        width: 24,
+                        height: 24,
+                        fontSize: '0.6rem'
+                      }}>
                         {getNotificationIcon(notification.type)}
                       </Avatar>
                       
-                      <Box className="notification-content">
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                          <Typography variant="h6" className="notification-title" onClick={() => setSelectedNotification(notification)}>
+                      <Box className="notification-content" sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.25 }}>
+                          <Typography 
+                            variant="body2" 
+                            className="notification-title" 
+                            onClick={() => setSelectedNotification(notification)}
+                            sx={{ 
+                              fontWeight: notification.isRead ? 400 : 600,
+                              fontSize: '0.7rem',
+                              cursor: 'pointer'
+                            }}
+                          >
                             {notification.title}
                           </Typography>
-                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                            <Chip label={notification.priority} size="small" className={`notification-chip priority-${notification.priority}`} />
-                            <Typography variant="caption" className="notification-time">
+                          <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center' }}>
+                            <Chip 
+                              label={notification.priority} 
+                              size="small" 
+                              className={`notification-chip priority-${notification.priority}`}
+                              sx={{ height: 14, fontSize: '0.5rem' }}
+                            />
+                            <Typography variant="caption" className="notification-time" sx={{ fontSize: '0.6rem' }}>
                               {formatNotificationTime(notification.createdAt)}
                             </Typography>
                           </Box>
                         </Box>
                         
-                        <Typography variant="body2" className="notification-message">
+                        <Typography 
+                          variant="body2" 
+                          className="notification-message"
+                          sx={{ 
+                            fontSize: '0.65rem',
+                            lineHeight: 1.2,
+                            mb: 0.25,
+                            color: 'text.secondary'
+                          }}
+                        >
                           {notification.message}
                         </Typography>
                         
-                        <Box className="notification-meta">
-                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                            <Typography variant="caption" className="notification-sender">
+                        <Box className="notification-meta" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <Typography variant="caption" className="notification-sender" sx={{ fontSize: '0.6rem' }}>
                               From: {notification.sender?.name || 'Unknown'}
                             </Typography>
+                            <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
+                              • To: {getRecipientInfo(notification)}
+                            </Typography>
                             {notification.metadata?.category && (
-                              <Chip label={notification.metadata.category} size="small" variant="outlined" className="notification-chip" />
+                              <Chip 
+                                label={notification.metadata.category} 
+                                size="small" 
+                                variant="outlined" 
+                                className="notification-chip"
+                                sx={{ height: 14, fontSize: '0.5rem' }}
+                              />
                             )}
                             {notification.courseId && (
-                              <Chip label={`Course: ${notification.courseId.courseName || notification.courseId.name}`} size="small" variant="outlined" color="primary" className="notification-chip" />
+                              <Chip 
+                                label={`Course: ${notification.courseId.courseName || notification.courseId.name}`} 
+                                size="small" 
+                                variant="outlined" 
+                                color="primary" 
+                                className="notification-chip"
+                                sx={{ height: 14, fontSize: '0.5rem' }}
+                              />
                             )}
                           </Box>
                           
-                          <Box className="notification-actions">
-                            {!notification.isRead && (
-                              <Button size="small" variant="outlined" onClick={() => handleMarkAsRead(notification._id)} className="notification-action-button mark-read">
-                                Mark as Read
-                              </Button>
-                            )}
+                          <Box className="notification-actions" sx={{ display: 'flex', gap: 0.25, alignItems: 'center' }}>
                             {(user?.role === 'admin' || user?.role === 'faculty') && (
                               <Tooltip title="Delete notification">
-                                <IconButton size="small" color="error" onClick={() => handleDeleteClick(notification)}>
-                                  <DeleteIcon />
+                                <IconButton 
+                                  size="small" 
+                                  color="error" 
+                                  onClick={() => handleDeleteClick(notification)}
+                                  sx={{ width: 20, height: 20 }}
+                                >
+                                  <DeleteIcon sx={{ fontSize: '0.7rem' }} />
                                 </IconButton>
                               </Tooltip>
                             )}
@@ -427,11 +434,6 @@ const NotificationCenter = () => {
                 </Grid>
               </DialogContent>
               <DialogActions>
-                {!selectedNotification.isRead && (
-                  <Button onClick={() => { handleMarkAsRead(selectedNotification._id); setSelectedNotification(null); }} className="notification-action-button mark-read">
-                    Mark as Read
-                  </Button>
-                )}
                 <Button onClick={() => setSelectedNotification(null)}>Close</Button>
               </DialogActions>
             </>

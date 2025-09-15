@@ -29,8 +29,8 @@ const ProtectedRoute = ({
   
   // If role is required but user doesn't have it, redirect
   if (requiredRole && user?.role !== requiredRole) {
-    console.log(`User role (${user?.role}) doesn't match required role (${requiredRole}), redirecting to unauthorized`);
-    return <Navigate to="/unauthorized" replace />;
+    console.log(`User role (${user?.role}) doesn't match required role (${requiredRole}), redirecting to login`);
+    return <Navigate to="/login" replace />;
   }
   
   console.log('User authenticated and authorized, rendering protected content');
