@@ -33,6 +33,46 @@ router.route('/:id/students')
   .get(authorize('admin', 'faculty'), getCourseStudents)
   .delete(authorize('admin', 'faculty'), deleteAllStudentsFromCourse);
 
+// Student course access route - allows students to get basic course info for enrolled courses
+router.get('/:id/student-info', authorize('student'), async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const studentId = req.user.id;
+    
+    // Find the student to check if they're enrolled
+    const Student = require('../models/Student');
+    const student = await Student.findOne({ user: studentId });
+    
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+    
+    // Check if student is enrolled in this course
+    if (!student.courses || !student.courses.includes(courseId)) {
+      return res.status(403).json({ success: false, message: 'Not enrolled in this course' });
+    }
+    
+    // Get course information
+    const Course = require('../models/Course');
+    const course = await Course.findById(courseId).select('courseName courseCode');
+    
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        courseName: course.courseName,
+        courseCode: course.courseCode
+      }
+    });
+  } catch (error) {
+    console.error('Error in student course info route:', error);
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+});
+
 // Individual course routes - MUST come after specific routes
 router.route('/:id')
   .get(authorize('admin', 'faculty'), getCourse)

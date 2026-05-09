@@ -31,8 +31,15 @@ exports.protect = async (req, res, next) => {
   }
 
   try {
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: 'Server JWT configuration missing'
+      });
+    }
+
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'attend_ease_secret_key_2609');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('Token decoded successfully:', decoded);
 
     // Get user from token

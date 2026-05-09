@@ -23,7 +23,6 @@ import {
   Error as ErrorIcon,
   PriorityHigh as PriorityHighIcon,
   Close as CloseIcon,
-  DoneAll as DoneAllIcon,
   Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { useNotifications } from '../context/NotificationContext';
@@ -36,7 +35,6 @@ const NotificationBell = () => {
     unreadCount,
     loading,
     markAsRead,
-    markAllAsRead,
     fetchNotifications
   } = useNotifications();
 
@@ -63,11 +61,6 @@ const NotificationBell = () => {
     if (!notification.isRead) {
       await markAsRead(notification._id);
     }
-    handleClose();
-  };
-
-  const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
     handleClose();
   };
 
@@ -178,58 +171,40 @@ const NotificationBell = () => {
         onClose={handleClose}
         PaperProps={{
           sx: {
-            width: 380,
-            maxHeight: 450,
+            width: 320,
+            maxHeight: 400,
             overflow: 'auto',
-            borderRadius: '12px',
+            borderRadius: '8px',
             border: '1px solid rgba(0, 0, 0, 0.08)',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)',
-            mt: 1
+            mt: 2
           }
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <Box sx={{ p: 1.5, borderBottom: '1px solid rgba(0, 0, 0, 0.06)', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
+        <Box sx={{ p: 0.5, borderBottom: '1px solid rgba(0, 0, 0, 0.06)', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="subtitle1" component="div" sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+            <Typography variant="subtitle1" component="div" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
               Notifications
             </Typography>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              {unreadCount > 0 && (
-                <Button
-                  size="small"
-                  startIcon={<DoneAllIcon sx={{ fontSize: '0.9rem' }} />}
-                  onClick={handleMarkAllAsRead}
-                  sx={{ 
-                    minWidth: 'auto', 
-                    px: 1, 
-                    py: 0.5, 
-                    fontSize: '0.75rem',
-                    height: '28px'
-                  }}
-                >
-                  Mark all read
-                </Button>
-              )}
-              <IconButton size="small" onClick={handleClose} sx={{ width: '28px', height: '28px' }}>
-                <CloseIcon sx={{ fontSize: '0.9rem' }} />
-              </IconButton>
-            </Box>
+            <IconButton size="small" onClick={handleClose} sx={{ width: '20px', height: '20px' }}>
+              <CloseIcon sx={{ fontSize: '0.7rem' }} />
+            </IconButton>
           </Box>
           {unreadCount > 0 && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.1, display: 'block', fontSize: '0.6rem' }}>
               {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
             </Typography>
           )}
         </Box>
 
-        <Box sx={{ minHeight: 180, maxHeight: 320 }}>
+        <Box sx={{ minHeight: 120, maxHeight: 280 }}>
           {menuLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
               <CircularProgress size={20} />
             </Box>
-          ) : notifications.length === 0 ? (
+          ) : (!notifications || notifications.length === 0) ? (
             <Box sx={{ textAlign: 'center', p: 2 }}>
               <NotificationsNoneIcon sx={{ fontSize: 36, color: 'text.secondary', mb: 1 }} />
               <Typography variant="body2" color="text.secondary">
@@ -237,65 +212,65 @@ const NotificationBell = () => {
               </Typography>
             </Box>
           ) : (
-            notifications.slice(0, 8).map((notification, index) => (
+            notifications.slice(0, 3).map((notification, index) => (
               <React.Fragment key={notification._id}>
                 <MenuItem
                   onClick={() => handleNotificationClick(notification)}
                   sx={{
                     display: 'block',
-                    py: 1,
-                    px: 1.5,
-                    borderLeft: notification.isRead ? 'none' : `3px solid ${getNotificationColor(notification.type)}`,
+                    py: 0.5,
+                    px: 1,
+                    borderLeft: notification.isRead ? 'none' : `2px solid ${getNotificationColor(notification.type)}`,
                     backgroundColor: notification.isRead ? 'transparent' : 'rgba(25, 118, 210, 0.03)',
                     '&:hover': {
                       backgroundColor: 'rgba(25, 118, 210, 0.06)'
                     },
                     borderRadius: '0',
-                    mx: 0.5,
-                    my: 0.25
+                    mx: 0.25,
+                    my: 0.1
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Avatar
                       sx={{
-                        width: 28,
-                        height: 28,
+                        width: 20,
+                        height: 20,
                         bgcolor: getNotificationColor(notification.type),
                         color: 'white',
-                        fontSize: '0.8rem'
+                        fontSize: '0.6rem'
                       }}
                     >
                       {getNotificationIcon(notification.type)}
                     </Avatar>
                     
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.25 }}>
                         <Typography
                           variant="body2"
                           sx={{
                             fontWeight: notification.isRead ? 400 : 600,
                             color: notification.isRead ? 'text.secondary' : 'text.primary',
-                            fontSize: '0.85rem',
-                            lineHeight: 1.3
+                            fontSize: '0.7rem',
+                            lineHeight: 1.2
                           }}
                         >
                           {notification.title}
                         </Typography>
-                        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', gap: 0.25, alignItems: 'center' }}>
                           <Chip
                             label={notification.priority}
                             size="small"
                             sx={{
-                              height: 14,
-                              fontSize: '0.55rem',
+                              height: 12,
+                              fontSize: '0.5rem',
                               bgcolor: getPriorityColor(notification.priority),
                               color: 'white',
                               '& .MuiChip-label': {
-                                px: 0.5
+                                px: 0.25
                               }
                             }}
                           />
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.55rem' }}>
                             {formatNotificationTime(notification.createdAt)}
                           </Typography>
                         </Box>
@@ -305,20 +280,20 @@ const NotificationBell = () => {
                         variant="body2"
                         color="text.secondary"
                         sx={{
-                          mb: 0.5,
+                          mb: 0.25,
                           display: '-webkit-box',
-                          WebkitLineClamp: 2,
+                          WebkitLineClamp: 1,
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden',
-                          fontSize: '0.75rem',
-                          lineHeight: 1.3
+                          fontSize: '0.6rem',
+                          lineHeight: 1.2
                         }}
                       >
-                        {truncateText(notification.message, 80)}
+                        {truncateText(notification.message, 60)}
                       </Typography>
                       
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.55rem' }}>
                           From: {notification.sender?.name || 'Unknown'}
                         </Typography>
                         {notification.metadata?.category && (
@@ -327,10 +302,10 @@ const NotificationBell = () => {
                             size="small"
                             variant="outlined"
                             sx={{ 
-                              height: 16, 
-                              fontSize: '0.55rem',
+                              height: 12, 
+                              fontSize: '0.5rem',
                               '& .MuiChip-label': {
-                                px: 0.5
+                                px: 0.25
                               }
                             }}
                           />
@@ -339,14 +314,14 @@ const NotificationBell = () => {
                     </Box>
                   </Box>
                 </MenuItem>
-                {index < notifications.length - 1 && <Divider sx={{ mx: 1, my: 0.25 }} />}
+                {index < notifications.length - 1 && <Divider sx={{ mx: 0.5, my: 0.1 }} />}
               </React.Fragment>
             ))
           )}
         </Box>
 
-        {notifications.length > 8 && (
-          <Box sx={{ p: 1.5, borderTop: '1px solid rgba(0, 0, 0, 0.06)', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
+        {notifications && notifications.length > 3 && (
+          <Box sx={{ p: 1, borderTop: '1px solid rgba(0, 0, 0, 0.06)', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
             <Button
               fullWidth
               variant="outlined"
@@ -356,35 +331,15 @@ const NotificationBell = () => {
                 navigate('/notifications');
               }}
               sx={{ 
-                fontSize: '0.8rem',
-                py: 0.5,
-                height: '32px'
+                fontSize: '0.7rem',
+                py: 0.25,
+                height: '28px'
               }}
             >
               View All Notifications
             </Button>
           </Box>
         )}
-        
-        {/* Always show View All button */}
-        <Box sx={{ p: 1.5, borderTop: '1px solid rgba(0, 0, 0, 0.06)', backgroundColor: 'rgba(0, 0, 0, 0.02)' }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            size="small"
-            onClick={() => {
-              handleClose();
-              navigate('/notifications');
-            }}
-            sx={{ 
-              fontSize: '0.8rem',
-              py: 0.5,
-              height: '32px'
-            }}
-          >
-            View All Notifications
-          </Button>
-        </Box>
       </Menu>
     </>
   );

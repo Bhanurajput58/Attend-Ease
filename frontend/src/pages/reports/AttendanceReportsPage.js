@@ -46,6 +46,7 @@ const AttendanceReportsPage = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState(null);
   const [coursesList, setCoursesList] = useState([]);
+  const [facultyApprovalStatus, setFacultyApprovalStatus] = useState(null);
 
   // Menu states for the export options
   const [formatMenuAnchor, setFormatMenuAnchor] = useState(null);
@@ -73,6 +74,7 @@ const AttendanceReportsPage = () => {
         if (response.data.success && response.data.data) {
           // Extract course list from the response
           setCoursesList(response.data.data.coursesList || []);
+          setFacultyApprovalStatus(response.data.data.isApproved || false);
           console.log('Courses list updated:', response.data.data.coursesList || []);
         } else {
           console.error('Failed to fetch courses data:', response.data);
@@ -402,6 +404,50 @@ const AttendanceReportsPage = () => {
   const getFormatLabel = (format) => {
     return format === 'pdf' ? 'PDF' : 'Excel';
   };
+
+  // Check for unapproved faculty restriction
+  if (user?.role === 'faculty' && facultyApprovalStatus === false) {
+    return (
+      <div className="attendance-reports-container">
+        <Container maxWidth="lg">
+          <Box className="loading-container" sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: '60vh',
+            textAlign: 'center'
+          }}>
+            <Paper sx={{ 
+              p: 4, 
+              maxWidth: 500, 
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+            }}>
+              <Typography variant="h5" sx={{ 
+                color: '#4a90e2', 
+                fontWeight: 600, 
+                mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1
+              }}>
+                Reports Access Restricted
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#555', mb: 1 }}>
+                You can't generate reports until your account is approved by admin.
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#4a90e2', fontWeight: 500 }}>
+                Contact your administrator for approval.
+              </Typography>
+            </Paper>
+          </Box>
+        </Container>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

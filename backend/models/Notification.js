@@ -20,7 +20,7 @@ const notificationSchema = new mongoose.Schema({
   },
   priority: {
     type: String,
-    enum: ['low', 'medium', 'high', 'urgent'],
+    enum: ['low', 'medium', 'high'],
     default: 'medium'
   },
   sender: {
@@ -47,7 +47,7 @@ const notificationSchema = new mongoose.Schema({
   recipients: {
     type: {
       type: String,
-      enum: ['all', 'course', 'individual', 'role', 'faculty'],
+      enum: ['all', 'admin', 'students', 'course', 'individual', 'role', 'faculty'],
       required: true
     },
     ids: [{
@@ -84,10 +84,6 @@ const notificationSchema = new mongoose.Schema({
     type: Date
   },
   metadata: {
-    actionUrl: {
-      type: String,
-      trim: true
-    },
     icon: {
       type: String,
       trim: true

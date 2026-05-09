@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
-  return mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/AttendEase', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+  if (!process.env.MONGO_URI) {
+    throw new Error('MONGO_URI is not set. Please configure it in your environment.');
+  }
+
+  return mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 10000
   });
 };
 

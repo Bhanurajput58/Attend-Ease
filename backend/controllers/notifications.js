@@ -67,14 +67,38 @@ const getSenderDetails = async (senderId, senderRole) => {
 };
 
 // Helper function to get recipient IDs based on recipient type
-const getRecipientIds = async (recipients) => {
-  const { type, ids, roles, model } = recipients;
-  
-  switch (type) {
+const getRecipientIds = async (recipients, senderId) => {
+  try {
+    const { type, ids, roles, model } = recipients;
+    console.log('getRecipientIds called with type:', type);
+    console.log('Full recipients object:', recipients);
+    
+    let recipientIds = [];
+    
+    switch (type) {
     case 'all':
       // Get all users from the User collection
+      console.log('Getting all users...');
       const allUsers = await User.find({}, '_id');
-      return allUsers.map(user => user._id.toString());
+      recipientIds = allUsers.map(user => user._id.toString());
+      console.log(`Found ${recipientIds.length} total users`);
+      break;
+      
+    case 'admin':
+      // Get all admin users
+      console.log('Getting admin users...');
+      const adminUsers = await User.find({ role: 'admin' }, '_id');
+      recipientIds = adminUsers.map(user => user._id.toString());
+      console.log(`Found ${recipientIds.length} admin users`);
+      break;
+      
+    case 'students':
+      // Get all student users
+      console.log('Getting student users...');
+      const studentUsers = await User.find({ role: 'student' }, '_id');
+      recipientIds = studentUsers.map(user => user._id.toString());
+      console.log(`Found ${recipientIds.length} student users`);
+      break;
       
     case 'course':
       if (!ids || ids.length === 0) return [];
@@ -91,38 +115,57 @@ const getRecipientIds = async (recipients) => {
             studentUserIds.push(student._id);
           }
         }
-        return studentUserIds;
+        recipientIds = studentUserIds;
       }
-      return [];
+      break;
       
     case 'individual':
-      return ids || [];
+      recipientIds = ids || [];
+      break;
       
     case 'role':
       if (roles && roles.includes('student')) {
         const students = await Student.find({}, 'user');
-        return students.map(s => s.user);
+        recipientIds = students.map(s => s.user);
       }
       if (roles && roles.includes('faculty')) {
         const faculty = await Faculty.find({}, 'user');
-        return faculty.map(f => f.user);
+        recipientIds = faculty.map(f => f.user);
       }
-      return [];
+      break;
       
     case 'faculty':
       const allFaculty = await Faculty.find({}, 'user');
-      return allFaculty.map(f => f.user);
+      recipientIds = allFaculty.map(f => f.user);
+      break;
       
     default:
-      return [];
+      console.log('Unknown recipient type:', type);
+      recipientIds = [];
+    }
+    
+    // Always include the sender as a recipient
+    if (senderId && !recipientIds.includes(senderId.toString())) {
+      recipientIds.push(senderId.toString());
+      console.log('Added sender to recipients');
+    }
+    
+    console.log('Final recipient IDs:', recipientIds);
+    return recipientIds;
+  } catch (error) {
+    console.error('Error in getRecipientIds:', error);
+    console.error('Error stack:', error.stack);
+    throw error;
   }
 };
 
 // Send notification (Admin and Faculty)
 exports.sendNotification = async (req, res) => {
   try {
+    console.log('=== sendNotification START ===');
     console.log('sendNotification called with body:', req.body);
     console.log('User from request:', req.user);
+    console.log('Recipients object:', req.body.recipients);
     
     const {
       title,
@@ -143,6 +186,7 @@ exports.sendNotification = async (req, res) => {
 
     // Validation
     if (!title || !message) {
+      console.log('Validation failed: missing title or message');
       return res.status(400).json({
         success: false,
         message: 'Title and message are required'
@@ -150,6 +194,7 @@ exports.sendNotification = async (req, res) => {
     }
 
     if (!recipients || !recipients.type) {
+      console.log('Validation failed: missing recipients configuration');
       return res.status(400).json({
         success: false,
         message: 'Recipients configuration is required'
@@ -162,16 +207,40 @@ exports.sendNotification = async (req, res) => {
     console.log('Sender details:', sender);
     
     if (!sender) {
+      console.log('Sender not found');
       return res.status(404).json({
         success: false,
         message: 'Sender not found'
       });
     }
 
+    // Check if faculty is approved (only for faculty senders)
+    if (senderRole === 'faculty') {
+      const facultyDoc = await Faculty.findOne({ user: senderId });
+      if (!facultyDoc || !facultyDoc.approved) {
+        // Unapproved faculty can only send notifications to admins
+        if (recipients.type !== 'admin') {
+          return res.status(403).json({
+            success: false,
+            message: 'Unapproved faculty can only send notifications to administrators. Please contact an administrator for approval.'
+          });
+        }
+        // If sending to admins, allow it
+        console.log('Unapproved faculty sending notification to admins - allowed');
+      }
+    }
+
     // Get recipient IDs
     console.log('Getting recipient IDs for:', recipients);
-    const recipientIds = await getRecipientIds(recipients);
-    console.log('Recipient IDs:', recipientIds);
+    let recipientIds;
+    try {
+      recipientIds = await getRecipientIds(recipients, senderId);
+      console.log('Recipient IDs:', recipientIds);
+      console.log('Recipient IDs length:', recipientIds.length);
+    } catch (error) {
+      console.error('Error getting recipient IDs:', error);
+      throw error;
+    }
     
     // Validate recipient IDs
     if (!Array.isArray(recipientIds) || recipientIds.length === 0) {
@@ -204,7 +273,7 @@ exports.sendNotification = async (req, res) => {
       priority,
       sender: {
         id: senderId, // Use the User ID directly
-        name: sender.fullName || sender.name || 'Unknown',
+        name: sender.fullName || sender.name || 'Unknown Sender',
         role: senderRole,
         model: senderRole === 'faculty' ? 'Faculty' : 
                senderRole === 'admin' ? 'Admin' : 'Student'
@@ -223,6 +292,11 @@ exports.sendNotification = async (req, res) => {
         readRate: 0
       }
     };
+
+    // Ensure sender name is never empty
+    if (!notificationData.sender.name || notificationData.sender.name === 'Unknown') {
+      notificationData.sender.name = sender.fullName || sender.name || 'System';
+    }
 
     console.log('Creating notification with data:', notificationData);
     const notification = new Notification(notificationData);
@@ -250,6 +324,7 @@ exports.sendNotification = async (req, res) => {
       }
     }
 
+    console.log('=== sendNotification SUCCESS ===');
     res.status(201).json({
       success: true,
       message: 'Notification sent successfully',
@@ -269,6 +344,11 @@ exports.sendNotification = async (req, res) => {
   } catch (error) {
     console.error('Error sending notification:', error);
     console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      code: error.code
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to send notification',
@@ -284,6 +364,27 @@ exports.getUserNotifications = async (req, res) => {
     const userRole = req.user.role;
     const { page = 1, limit = 20, unreadOnly = false, type, priority } = req.query;
 
+    // Restrict unapproved faculty from seeing notifications
+    if (userRole === 'faculty') {
+      const facultyDoc = await require('../models/Faculty').findOne({ user: userId });
+      if (!facultyDoc || !facultyDoc.approved) {
+        return res.json({
+          success: true,
+          data: {
+            notifications: [],
+            pagination: {
+              page: parseInt(page),
+              limit: parseInt(limit),
+              total: 0,
+              pages: 0
+            },
+            unreadCount: 0
+          },
+          message: 'Unapproved faculty cannot view notifications. Please contact an administrator for approval.'
+        });
+      }
+    }
+
     const skip = (page - 1) * limit;
     const query = {};
 
@@ -298,8 +399,11 @@ exports.getUserNotifications = async (req, res) => {
         { 'sender.role': 'admin' }
       ];
     } else if (userRole === 'admin') {
-      // Admins can see all notifications they sent
-      query['sender.id'] = userId;
+      // Admins can see notifications sent to them and notifications they sent
+      query.$or = [
+        { 'recipients.ids': userId },
+        { 'sender.id': userId }
+      ];
     }
 
     if (unreadOnly === 'true') {
@@ -308,7 +412,6 @@ exports.getUserNotifications = async (req, res) => {
         'user.id': userId,
         readAt: null
       }).distinct('notification');
-      
       query._id = { $in: unreadNotifications };
     }
 
@@ -325,8 +428,30 @@ exports.getUserNotifications = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
-      .populate('sender.id', 'fullName name')
+      .populate('sender.id', 'fullName name email')
       .populate('courseId', 'courseName name');
+
+    // Ensure sender information is properly formatted
+    const formattedNotifications = notifications.map(notification => {
+      const notificationObj = notification.toObject();
+      
+      // Ensure sender information is always available
+      if (!notificationObj.sender || !notificationObj.sender.name) {
+        // Fallback to populated sender data or default values
+        const senderName = notificationObj.sender?.id?.name || 
+                          notificationObj.sender?.id?.fullName || 
+                          notificationObj.sender?.name || 
+                          'Unknown Sender';
+        
+        notificationObj.sender = {
+          ...notificationObj.sender,
+          name: senderName,
+          id: notificationObj.sender?.id?._id || notificationObj.sender?.id
+        };
+      }
+      
+      return notificationObj;
+    });
 
     // Get total count
     const total = await Notification.countDocuments(query);
@@ -340,7 +465,7 @@ exports.getUserNotifications = async (req, res) => {
     res.json({
       success: true,
       data: {
-        notifications,
+        notifications: formattedNotifications,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -350,14 +475,9 @@ exports.getUserNotifications = async (req, res) => {
         unreadCount
       }
     });
-
   } catch (error) {
-    console.error('Error getting user notifications:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get notifications',
-      error: error.message
-    });
+    console.error('Error fetching user notifications:', error);
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
 };
 
@@ -437,6 +557,12 @@ exports.markAllNotificationsAsRead = async (req, res) => {
         { 'recipients.ids': userId },
         { 'recipients.type': 'faculty' },
         { 'sender.role': 'admin' }
+      ];
+    } else if (userRole === 'admin') {
+      // Admins can see notifications sent to them and notifications they sent
+      query.$or = [
+        { 'recipients.ids': userId },
+        { 'sender.id': userId }
       ];
     }
 
@@ -526,6 +652,7 @@ exports.getNotificationStats = async (req, res) => {
       byType: {},
       byPriority: {},
       byCategory: {},
+      bySender: {},
       readRate: 0,
       totalRecipients: 0,
       totalReads: 0
@@ -541,6 +668,10 @@ exports.getNotificationStats = async (req, res) => {
       // Count by category
       const category = notification.metadata.category || 'announcement';
       stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
+      
+      // Count by sender role
+      const senderRole = notification.sender.role;
+      stats.bySender[senderRole] = (stats.bySender[senderRole] || 0) + 1;
       
       // Aggregate stats
       stats.totalRecipients += notification.stats.totalRecipients;
@@ -644,6 +775,44 @@ exports.getAvailableCourses = async (req, res) => {
       success: false,
       message: 'Failed to get available courses',
       error: error.message
+    });
+  }
+};
+
+// Get all admins for faculty notifications
+exports.getAllAdmins = async (req, res) => {
+  try {
+    const Admin = require('../models/Admin');
+    console.log('Fetching all admins...');
+    const admins = await Admin.find({})
+      .populate('user', 'name email username')
+      .select('name email department designation user');
+    
+    console.log('Raw admins data:', admins);
+    
+    const formattedAdmins = admins.map(a => ({
+      _id: a._id,
+      fullName: a.name || 'Unknown Name',
+      name: a.name || 'Unknown Name',
+      email: a.email,
+      department: a.department,
+      designation: a.designation,
+      user: a.user?._id
+    }));
+    
+    console.log('Formatted admins:', formattedAdmins);
+    
+    res.status(200).json({
+      success: true,
+      count: formattedAdmins.length,
+      data: formattedAdmins
+    });
+  } catch (error) {
+    console.error('Error fetching all admins:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server Error', 
+      error: error.message 
     });
   }
 }; 

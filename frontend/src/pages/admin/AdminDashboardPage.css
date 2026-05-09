@@ -1,157 +1,562 @@
-/* Enhanced Admin Dashboard Styles */
-.dashboard-container {
-  background: linear-gradient(120deg, #f3e7fa 0%, #e3e3f3 100%);
+/* Admin Dashboard Styles - Unique Classes */
+.admin-dashboard-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  padding-bottom: 2rem;
-}
-.dashboard-content {
-  padding-top: 2rem;
-}
-.dashboard-card {
-  border-radius: 18px;
-  box-shadow: 0 2px 12px rgba(156, 39, 176, 0.10);
-  background: #faf7fd;
-  transition: box-shadow 0.2s, transform 0.2s;
-  border: 1px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-.dashboard-card:hover {
-  box-shadow: 0 4px 24px rgba(156, 39, 176, 0.18);
-  transform: translateY(-2px) scale(1.01);
+  padding: 2rem 0;
 }
 
-/* Stat Card Enhancements */
-.dashboard-card .MuiTypography-h2 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #3b82f6;
-}
-.dashboard-card .MuiTypography-h6 {
-  font-weight: 600;
-}
-
-/* Chart Card Enhancements */
-.dashboard-card.dashboard-chart-card {
-  padding: 0;
-  background: linear-gradient(135deg, #f0f4ff 0%, #f7f7fb 100%);
-  box-shadow: 0 2px 16px rgba(59, 130, 246, 0.08);
-  border: 1.5px solid #e3e8f0;
-}
-.dashboard-card .recharts-legend-wrapper {
-  padding-top: 10px;
-}
-.dashboard-card .recharts-tooltip-wrapper {
-  z-index: 10;
-}
-.dashboard-card .recharts-bar-rectangle:hover {
-  filter: brightness(1.1) drop-shadow(0 2px 8px #1976d233);
-  cursor: pointer;
-}
-.dashboard-card .recharts-pie-sector:hover {
-  filter: brightness(1.1) drop-shadow(0 2px 8px #0088fe33);
-  cursor: pointer;
+.admin-dashboard-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
-/* Tab Styles */
-.MuiTabs-root {
-  margin-bottom: 1.5rem;
-  background: #f7f7fb;
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.04);
-}
-.MuiTab-root {
-  font-weight: 600;
-  font-size: 1.1rem;
-  border-radius: 12px 12px 0 0;
-  transition: background 0.2s, color 0.2s;
-}
-.MuiTab-root.Mui-selected {
-  background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
-  color: #fff !important;
-}
-
-/* Table Styles */
-.MuiTable-root {
-  background: transparent;
-}
-.MuiTableCell-head {
-  font-weight: bold;
-  background: #f3e7fa;
-  font-size: 1.05rem;
-}
-.MuiTableRow-root:nth-child(even) {
-  background: #f8f9fc;
-}
-.MuiTableRow-root:hover {
-  background: #e0f2fe !important;
-  transition: background 0.2s;
-}
-.table-action-btn {
-  margin-right: 0.25rem;
-  color: #3b82f6;
-  background: #e0e7ff;
-  border-radius: 6px;
-  transition: background 0.2s, color 0.2s;
-}
-.table-action-btn:hover {
-  background: #3b82f6;
-  color: #fff;
-}
-
-/* Chart Container */
-.dashboard-card .recharts-responsive-container {
-  min-height: 350px;
-}
-
-/* Search and Export Controls */
-.course-management-controls {
+.admin-welcome-section {
   display: flex;
   align-items: center;
+  gap: 1.5rem;
+}
+
+.admin-avatar {
+  width: 80px !important;
+  height: 80px !important;
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  font-size: 2rem !important;
+}
+
+.admin-welcome-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-welcome-title {
+  font-weight: 700 !important;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem !important;
+}
+
+.admin-welcome-subtitle {
+  color: #666 !important;
+  font-weight: 400 !important;
+}
+
+.admin-header-actions {
+  display: flex;
   gap: 1rem;
 }
-.course-management-controls .MuiTextField-root {
-  min-width: 220px;
-  background: #fff;
-  border-radius: 8px;
+
+.admin-action-button {
+  border-radius: 12px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  transition: all 0.3s ease !important;
 }
-.course-management-controls .MuiButton-root {
+
+.admin-action-button.primary {
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+}
+
+.admin-action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.admin-stats-section {
+  margin-bottom: 3rem;
+}
+
+.admin-stat-card {
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease !important;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15) !important;
+}
+
+.admin-stat-card.total-users::before {
+  background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+}
+
+.admin-stat-card.active-courses::before {
+  background: linear-gradient(45deg, #10b981, #059669);
+}
+
+.admin-stat-card.system-status::before {
+  background: linear-gradient(45deg, #f59e0b, #d97706);
+}
+
+.admin-stat-card.quick-actions::before {
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+}
+
+.admin-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  margin-bottom: 1rem;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  font-size: 1.5rem;
+}
+
+.admin-stat-card.total-users .admin-stat-icon {
+  background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+}
+
+.admin-stat-card.active-courses .admin-stat-icon {
+  background: linear-gradient(45deg, #10b981, #059669);
+}
+
+.admin-stat-card.system-status .admin-stat-icon {
+  background: linear-gradient(45deg, #f59e0b, #d97706);
+}
+
+.admin-stat-card.quick-actions .admin-stat-icon {
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+}
+
+.admin-stat-number {
+  font-weight: 700 !important;
+  font-size: 3rem !important;
+  margin-bottom: 0.5rem !important;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-stat-label {
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+  color: #333 !important;
+}
+
+.admin-stat-description {
+  color: #666 !important;
+  font-size: 0.9rem !important;
+}
+
+.admin-status-indicator {
+  margin: 1rem 0;
+}
+
+.admin-quick-actions-buttons {
+  margin-top: 1rem;
+}
+
+.admin-quick-action-btn {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+.admin-main-content {
+  margin-bottom: 2rem;
+}
+
+.admin-content-card {
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  height: 100%;
+  transition: all 0.3s ease !important;
+}
+
+.admin-content-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.admin-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700 !important;
+  color: #333 !important;
+}
+
+.admin-section-icon {
+  color: #667eea !important;
+  font-size: 1.5rem !important;
+}
+
+.admin-tab-controls {
+  display: flex;
+  align-items: center;
+}
+
+.admin-dashboard-tabs {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.admin-dashboard-tabs .MuiTab-root {
+  border-radius: 8px;
   font-weight: 600;
+  text-transform: none;
+  min-width: 100px;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard-tabs .MuiTab-root.Mui-selected {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white !important;
+}
+
+
+
+.admin-chart-card {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.3s ease !important;
+  height: 100%;
+  background: white !important;
+}
+
+.admin-chart-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+.admin-chart-title {
+  font-weight: 600 !important;
+  color: #333 !important;
+  margin-bottom: 1rem !important;
+}
+
+.admin-chart-container {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-course-management-section {
+  width: 100%;
+}
+
+.admin-section-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-search-field {
+  min-width: 250px;
+  background: white;
   border-radius: 8px;
-  box-shadow: 0 1px 4px #3b82f61a;
 }
 
-/* Responsive Enhancements */
-@media (max-width: 900px) {
-  .dashboard-card {
-    margin-bottom: 1rem;
-  }
-  .MuiTableCell-root {
-    font-size: 0.95rem;
-  }
+.admin-date-field {
+  min-width: 150px;
+  background: white;
+  border-radius: 8px;
 }
 
-@media (max-width: 600px) {
-  .dashboard-content {
-    padding-top: 0.5rem;
-  }
-  .dashboard-card {
-    padding: 0.5rem;
-  }
-  .MuiTypography-h2 {
-    font-size: 2rem;
-  }
-  .course-management-controls {
+.admin-export-button {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+}
+
+.admin-table-card {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  background: white !important;
+}
+
+.admin-table-row {
+  transition: background 0.2s ease;
+}
+
+.admin-table-row:hover {
+  background: #f8f9fa !important;
+}
+
+.admin-course-name-cell {
+  font-weight: 600 !important;
+  color: #333 !important;
+}
+
+.admin-action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-action-icon {
+  transition: all 0.2s ease !important;
+}
+
+.admin-action-icon:hover {
+  transform: scale(1.1);
+}
+
+.admin-analytics-section {
+  width: 100%;
+}
+
+.admin-quick-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-quick-stat-item {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
+  transition: all 0.3s ease !important;
+  background: white !important;
+}
+
+.admin-quick-stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.admin-stat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.admin-stat-icon-small {
+  color: #667eea !important;
+  font-size: 1.25rem !important;
+}
+
+.admin-stat-action-btn {
+  margin-top: 1rem;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+.admin-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.admin-empty-icon {
+  font-size: 4rem !important;
+  color: #ccc !important;
+  margin-bottom: 1rem;
+}
+
+.admin-empty-title {
+  font-weight: 600 !important;
+  color: #666 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.admin-empty-description {
+  color: #999 !important;
+  max-width: 300px;
+}
+
+.admin-error-alert {
+  border-radius: 12px !important;
+  margin-bottom: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .admin-dashboard-header-section {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 2rem;
+    text-align: center;
+  }
+  
+  .admin-welcome-section {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .admin-header-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .admin-section-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .admin-tab-controls {
+    width: 100%;
+  }
+  
+  .admin-dashboard-tabs {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard-container {
+    padding: 1rem 0;
+  }
+  
+  .admin-dashboard-header-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+  }
+  
+  .admin-welcome-title {
+    font-size: 1.75rem !important;
+  }
+  
+  .admin-avatar {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  
+  .admin-stat-number {
+    font-size: 2.5rem !important;
+  }
+  
+  .admin-section-controls {
+    flex-direction: column;
     align-items: stretch;
   }
+  
+  .admin-search-field,
+  .admin-date-field {
+    min-width: auto;
+  }
 }
 
-/* Snackbar and Alert */
-.MuiSnackbar-root {
-  z-index: 1400;
+@media (max-width: 480px) {
+  .admin-stats-section {
+    margin-bottom: 2rem;
+  }
+  
+  .admin-stat-card {
+    margin-bottom: 1rem;
+  }
+  
+  .admin-welcome-title {
+    font-size: 1.5rem !important;
+  }
+  
+  .admin-action-button {
+    padding: 10px 16px !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .admin-header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .admin-action-button {
+    width: 100%;
+  }
 }
-.MuiAlert-root {
-  border-radius: 8px;
-  font-size: 1rem;
+
+/* Loading State */
+.admin-dashboard-container .MuiCircularProgress-root {
+  color: #667eea !important;
+}
+
+/* Animations */
+@keyframes adminFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-stat-card,
+.admin-content-card,
+.admin-chart-card,
+.admin-quick-stat-item {
+  animation: adminFadeInUp 0.6s ease-out;
+}
+
+.admin-stat-card:nth-child(1) { animation-delay: 0.1s; }
+.admin-stat-card:nth-child(2) { animation-delay: 0.2s; }
+.admin-stat-card:nth-child(3) { animation-delay: 0.3s; }
+.admin-stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* Hover Effects */
+.admin-stat-card:hover .admin-stat-icon {
+  transform: scale(1.1);
+  transition: transform 0.3s ease;
+}
+
+.admin-chart-card:hover .admin-chart-title {
+  color: #667eea !important;
+  transition: color 0.3s ease;
+}
+
+/* Custom Scrollbar */
+.admin-dashboard-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-dashboard-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.admin-dashboard-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  border-radius: 4px;
+}
+
+.admin-dashboard-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #5a6fd8, #6a4190);
 } 

@@ -8,7 +8,8 @@ const {
   getUnreadCount,
   getNotificationStats,
   deleteNotification,
-  getAvailableCourses
+  getAvailableCourses,
+  getAllAdmins
 } = require('../controllers/notifications');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -38,5 +39,8 @@ router.delete('/:id', authorize('admin', 'faculty'), deleteNotification);
 
 // Get available courses for faculty notifications
 router.get('/available-courses', authorize('faculty'), getAvailableCourses);
+
+// Get all admins for faculty notifications
+router.get('/admins', authorize('faculty'), getAllAdmins);
 
 module.exports = router; 

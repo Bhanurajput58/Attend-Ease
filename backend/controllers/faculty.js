@@ -10,7 +10,7 @@ exports.getAllFaculty = async (req, res) => {
   try {
     const faculty = await Faculty.find({})
       .populate('user', 'name email username')
-      .select('fullName name email department designation user');
+      .select('fullName name email department designation user approved'); // <-- include approved
     
     const formattedFaculty = faculty.map(f => ({
       _id: f._id,
@@ -19,7 +19,8 @@ exports.getAllFaculty = async (req, res) => {
       email: f.email,
       department: f.department,
       designation: f.designation,
-      user: f.user?._id
+      user: f.user?._id,
+      approved: f.approved // <-- include approved in response
     }));
     
     res.status(200).json({
@@ -178,6 +179,11 @@ const calculateLowAttendanceStats = async (courseId, threshold = 75) => {
 exports.getFacultyDashboard = async (req, res) => {
   try {
     const facultyId = req.user.id;
+    
+    // Get faculty profile to check approval status
+    const facultyProfile = await Faculty.findOne({ user: facultyId });
+    const isApproved = facultyProfile ? facultyProfile.approved : false;
+    
     const courseQuery = { instructor: facultyId }; // Only check instructor field for consistency
     const activeCourses = await Course.countDocuments(courseQuery);
     const courses = await Course.find(courseQuery).select('_id courseName courseCode students department semester schedule');
@@ -240,6 +246,7 @@ exports.getFacultyDashboard = async (req, res) => {
       averageAttendance: 0, 
       recentActivity: [], 
       coursesList, 
+      isApproved,
       message: activeCourses === 0 ? 'No courses assigned yet. Please contact your administrator.' : null 
     };
     
@@ -486,19 +493,18 @@ exports.sendLowAttendanceEmails = async (req, res) => {
     // Get attendance records for the course to calculate attendance data
     const attendanceRecords = await Attendance.find({ course: courseId });
 
-    for (const student of students) {
+    // Send emails in parallel instead of sequentially
+    const emailPromises = students.map(async (student) => {
       try {
         // Check if student has email
         if (!student.email) {
-          emailResults.push({
+          return {
             studentId: student._id,
             studentName: student.name,
             email: null,
             success: false,
             error: 'No email address available'
-          });
-          failedEmails++;
-          continue;
+          };
         }
 
         // Calculate attendance data for this student
@@ -537,7 +543,7 @@ exports.sendLowAttendanceEmails = async (req, res) => {
           customMessage
         );
 
-        emailResults.push({
+        return {
           studentId: student._id,
           studentName: student.name,
           email: student.email,
@@ -549,26 +555,32 @@ exports.sendLowAttendanceEmails = async (req, res) => {
             classesAttended: presentSessions,
             totalClasses: totalSessions
           }
-        });
-
-        if (emailResult.success) {
-          successfulEmails++;
-        } else {
-          failedEmails++;
-        }
+        };
 
       } catch (error) {
         console.error(`Error sending email to ${student.name}:`, error);
-        emailResults.push({
+        return {
           studentId: student._id,
           studentName: student.name,
           email: student.email,
           success: false,
           error: error.message
-        });
+        };
+      }
+    });
+
+    // Wait for all emails to be sent
+    const results = await Promise.all(emailPromises);
+    
+    // Process results
+    results.forEach(result => {
+      emailResults.push(result);
+      if (result.success) {
+        successfulEmails++;
+      } else {
         failedEmails++;
       }
-    }
+    });
 
     // Return results
     res.status(200).json({

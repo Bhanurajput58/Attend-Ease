@@ -31,4 +31,37 @@ exports.getAdminById = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server Error', error: error.message });
   }
+};
+
+// Get all admins (for notifications)
+exports.getAllAdmins = async (req, res) => {
+  try {
+    const Admin = require('../models/Admin');
+    const admins = await Admin.find({})
+      .populate('user', 'name email username')
+      .select('fullName name email department designation user');
+    
+    const formattedAdmins = admins.map(a => ({
+      _id: a._id,
+      fullName: a.fullName || a.name || 'Unknown Name',
+      name: a.fullName || a.name || 'Unknown Name',
+      email: a.email,
+      department: a.department,
+      designation: a.designation,
+      user: a.user?._id
+    }));
+    
+    res.status(200).json({
+      success: true,
+      count: formattedAdmins.length,
+      data: formattedAdmins
+    });
+  } catch (error) {
+    console.error('Error fetching all admins:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server Error', 
+      error: error.message 
+    });
+  }
 }; 
